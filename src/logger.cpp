@@ -18,6 +18,8 @@ Logger::Logger(std::ostream& externalStream)
 {
 }
 
-// void Logger::log(const std::string& msg) {
-//      TODO: Zaga
-// }
+void Logger::log(const std::string& msg) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_outStream << msg << '\n';
+    m_outStream.flush();
+}

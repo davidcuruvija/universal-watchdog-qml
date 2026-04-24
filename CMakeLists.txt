@@ -33,3 +33,11 @@ target_include_directories(watchdog_core
 # Threads za std::mutex, std::thread
 find_package(Threads REQUIRED)
 target_link_libraries(watchdog_core PUBLIC Threads::Threads)
+
+# -----------------------------------------------------------------------------
+# Tests
+# -----------------------------------------------------------------------------
+if(WATCHDOG_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

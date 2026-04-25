@@ -3,7 +3,7 @@
 
 class AlwaysAliveWatchable : public Watchable {
 public:
-    bool isAlive() override { 
+    bool isAlive() const override { 
         return true; 
     }
 

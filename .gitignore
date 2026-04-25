@@ -1,0 +1,36 @@
+# Build directory
+build/
+bin/
+lib/
+out/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+Makefile
+_deps/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+.settings/
+.project
+.cproject
+
+# OS
+.DS_Store
+Thumbs.db
+*.log
+
+# Testing
+Testing/
+*.gcov
+*.gcda
+*.gcno

@@ -19,7 +19,7 @@ static std::string getProcessName(pid_t targetPid) {
 
 ProcessMonitor::ProcessMonitor(pid_t pid) : m_name(getProcessName(pid)), m_pid(pid) {}
 
-std::string ProcessMonitor::getName() const {
+std::string ProcessMonitor::name() const {
     return m_name;
 }
 

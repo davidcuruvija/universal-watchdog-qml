@@ -30,7 +30,7 @@ TEST_CASE("ProcessMonitor tracks process lifecycle", "[ProcessMonitor]") {
 
     // 2. Verify it is alive at the start AND check the name
     REQUIRE(monitor->isAlive() == true);
-    REQUIRE(monitor->getName() == "sleep");
+    REQUIRE(monitor->name() == "sleep");
 
     // 3. Wait for 1.5 seconds so the process has time to finish naturally
     usleep(1500000);
@@ -45,7 +45,7 @@ TEST_CASE("ProcessMonitor tracks process lifecycle", "[ProcessMonitor]") {
     REQUIRE(monitor->isAlive() == true);
 
     // For the tested Ubuntu Linux system, PID 1 name is systemd
-    REQUIRE(monitor->getName() == "systemd");
+    REQUIRE(monitor->name() == "systemd");
   }
 
   SECTION("Monitor invalid/non-existent process") {
@@ -56,6 +56,6 @@ TEST_CASE("ProcessMonitor tracks process lifecycle", "[ProcessMonitor]") {
     REQUIRE(monitor->isAlive() == false);
 
     // It shouldn't be able to read a name from /proc
-    REQUIRE(monitor->getName() == "UnknownProcess");
+    REQUIRE(monitor->name() == "UnknownProcess");
   }
 }

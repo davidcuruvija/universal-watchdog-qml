@@ -12,6 +12,6 @@ private:
 public:
     explicit ProcessMonitor(pid_t pid);
 
-    std::string getName() const override;
+    std::string name() const override;
     bool isAlive() const override;
 };

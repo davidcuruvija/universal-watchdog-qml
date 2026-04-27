@@ -58,4 +58,27 @@ TEST_CASE("ProcessMonitor tracks process lifecycle", "[ProcessMonitor]") {
     // It shouldn't be able to read a name from /proc
     REQUIRE(monitor->name() == "UnknownProcess");
   }
+
+  SECTION("Monitor zombie process") {
+    pid_t pid = fork();
+    REQUIRE(pid >= 0);
+
+    if (pid == 0) {
+      // Child process exits immediately to become a zombie
+      std::exit(0);
+    } else {
+      // Parent process
+      // Give the child a moment to exit and become a zombie
+      usleep(50000);
+
+      auto monitor = std::make_shared<ProcessMonitor>(pid);
+
+      // Zombie processes should be reported as dead (false)
+      REQUIRE(monitor->isAlive() == false);
+
+      // Clean up the zombie process to avoid polluting the OS
+      int status;
+      waitpid(pid, &status, 0);
+    }
+  }
 }

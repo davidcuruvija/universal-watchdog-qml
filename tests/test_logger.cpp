@@ -1,5 +1,5 @@
+#include <catch2/catch_test_macros.hpp>
 #include "../include/logger.h"
-#include <cassert>
 #include <sstream>
 #include <fstream>
 #include <string>
@@ -9,47 +9,62 @@
 
 // --- stream constructor ---
 
-void testStreamConstructorLogsSingleMessage() {
+TEST_CASE("Logger with stream constructor logs a single message", "[logger][stream]") {
+    // Arrange
     std::ostringstream oss;
     Logger logger(oss);
+
+    // Act
     logger.log("hello");
-    assert(oss.str() == "hello\n");
+
+    // Assert
+    REQUIRE(oss.str() == "hello\n");
 }
 
-void testStreamConstructorLogsMultipleMessages() {
+TEST_CASE("Logger with stream constructor logs multiple messages", "[logger][stream]") {
+    // Arrange
     std::ostringstream oss;
     Logger logger(oss);
+
+    // Act
     logger.log("first");
     logger.log("second");
-    assert(oss.str() == "first\nsecond\n");
+
+    // Assert
+    REQUIRE(oss.str() == "first\nsecond\n");
 }
 
 // --- file constructor ---
 
-void testFileConstructorCreatesAndWrites() {
+TEST_CASE("Logger with file constructor creates file and writes messages", "[logger][file]") {
+    // Arrange
     const std::string path = "/tmp/test_logger_create.log";
     std::filesystem::remove(path);
 
+    // Act
     {
         Logger logger(path);
         logger.log("line one");
         logger.log("line two");
     }
 
+    // Assert
     std::ifstream f(path);
     std::string line1, line2;
     std::getline(f, line1);
     std::getline(f, line2);
-    assert(line1 == "line one");
-    assert(line2 == "line two");
+    REQUIRE(line1 == "line one");
+    REQUIRE(line2 == "line two");
 
     std::filesystem::remove(path);
 }
 
-void testFileConstructorAppendsOnReopen() {
+TEST_CASE("Logger with file constructor appends on reopen", "[logger][file]") {
+    // Arrange
     const std::string path = "/tmp/test_logger_append.log";
     std::filesystem::remove(path);
 
+    // Act
     {
         Logger logger(path);
         logger.log("first session");
@@ -59,35 +74,36 @@ void testFileConstructorAppendsOnReopen() {
         logger.log("second session");
     }
 
+    // Assert
     std::ifstream f(path);
     std::string line1, line2;
     std::getline(f, line1);
     std::getline(f, line2);
-    assert(line1 == "first session");
-    assert(line2 == "second session");
+    REQUIRE(line1 == "first session");
+    REQUIRE(line2 == "second session");
 
     std::filesystem::remove(path);
 }
 
-void testFileConstructorThrowsOnBadPath() {
-    bool threw = false;
-    try {
-        Logger logger("/nonexistent_dir/file.log");
-    } catch (const std::runtime_error&) {
-        threw = true;
-    }
-    assert(threw);
+TEST_CASE("Logger with file constructor throws on bad path", "[logger][file]") {
+    // Arrange
+    const std::string badPath = "/nonexistent_dir/file.log";
+
+    // Act & Assert
+    REQUIRE_THROWS_AS(Logger(badPath), std::runtime_error);
 }
 
 // --- thread safety ---
 
-void testLogIsThreadSafe() {
+TEST_CASE("Logger::log is thread-safe", "[logger][thread]") {
+    // Arrange
     std::ostringstream oss;
     Logger logger(oss);
 
     constexpr int numThreads = 8;
     constexpr int msgsPerThread = 50;
 
+    // Act
     std::vector<std::thread> threads;
     for (int i = 0; i < numThreads; ++i) {
         threads.emplace_back([&logger, i]() {
@@ -98,18 +114,9 @@ void testLogIsThreadSafe() {
     }
     for (auto& t : threads) t.join();
 
+    // Assert
     const std::string out = oss.str();
     int newlines = 0;
     for (char c : out) if (c == '\n') ++newlines;
-    assert(newlines == numThreads * msgsPerThread);
-}
-
-int main() {
-    testStreamConstructorLogsSingleMessage();
-    testStreamConstructorLogsMultipleMessages();
-    testFileConstructorCreatesAndWrites();
-    testFileConstructorAppendsOnReopen();
-    testFileConstructorThrowsOnBadPath();
-    testLogIsThreadSafe();
-    return 0;
+    REQUIRE(newlines == numThreads * msgsPerThread);
 }

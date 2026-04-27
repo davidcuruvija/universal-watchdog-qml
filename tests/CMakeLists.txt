@@ -13,6 +13,7 @@ include(Catch)
 
 add_executable(watchdog_tests
     test_placeholder.cpp
+    test_logger.cpp
 )
 
 target_link_libraries(watchdog_tests

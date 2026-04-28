@@ -22,7 +22,6 @@ option(WATCHDOG_BUILD_TESTS "Build unit tests" ON)
 # Watchdog core library
 # -----------------------------------------------------------------------------
 add_library(watchdog_core
-    src/placeholder.cpp
     src/ThreadMonitor.cpp
 )
 

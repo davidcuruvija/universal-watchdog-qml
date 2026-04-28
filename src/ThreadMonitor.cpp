@@ -12,7 +12,7 @@ void ThreadMonitor::updateHeartbeat() {
     m_lastHeartbeat = std::chrono::steady_clock::now();
 }
 
-bool ThreadMonitor::isAlive() {
+bool ThreadMonitor::isAlive() const {
     std::lock_guard<std::mutex> lock(m_mutex);
     const auto elapsed = std::chrono::steady_clock::now() - m_lastHeartbeat;
     return elapsed < m_timeout;

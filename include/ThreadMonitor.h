@@ -16,7 +16,7 @@ public:
 
     void updateHeartbeat();
 
-    bool isAlive() override;
+    bool isAlive() const override;
     std::string name() const override;
 
     std::chrono::milliseconds timeout() const { 

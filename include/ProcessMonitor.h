@@ -4,19 +4,53 @@
 
 #include <sys/types.h>
 
+/**
+ * @class ProcessMonitor
+ * @brief Monitors a specific system process using its Process ID (PID).
+ *
+ * This class implements the Watchable interface to monitor the state
+ * of system processes by reading from the /proc filesystem in Linux.
+ */
 class ProcessMonitor : public Watchable {
 private:
-  std::string m_name;
-  pid_t m_pid;
+  std::string m_name; ///< The name of the monitored process.
+  pid_t m_pid;        ///< The Process ID (PID) of the monitored process.
 
 protected:
+  /**
+   * @brief Returns the absolute filesystem path to the process's status file.
+   *
+   * This path is used to retrieve system-level process information, typically
+   * from the /proc filesystem on Linux systems.
+   *
+   * @return std::string The absolute path to the status file.
+   */
   virtual std::string getStatPath() const {
     return "/proc/" + std::to_string(m_pid) + "/stat";
   }
 
 public:
+  /**
+   * @brief Constructs a ProcessMonitor for the specified PID.
+   * @param pid The Process ID of the target process to monitor.
+   */
   explicit ProcessMonitor(pid_t pid);
 
+  /**
+   * @brief Retrieves the name of the monitored process.
+   * @return The process name extracted from the system.
+   */
   std::string name() const override;
+
+  /**
+   * @brief Evaluates if the monitored process is currently alive.
+   *
+   * Parses the stat file to check the exact state character.
+   *
+   * @return true If the process is in Running (R), Sleeping (S), or Disk Sleep
+   * (D) state.
+   * @return false If the process does not exist, or is in Zombie (Z) or Stopped
+   * (T) state.
+   */
   bool isAlive() const override;
 };

@@ -29,6 +29,10 @@ public:
     // Signals the monitoring loop to stop and joins the thread.
     void stop();
 
+    // Inspection methods (for tests)
+    bool isRunning() const;
+    std::size_t count() const;
+
 private:
     void monitorLoop(int interval_ms);
 

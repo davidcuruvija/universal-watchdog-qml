@@ -32,6 +32,15 @@ void Watchdog::stop() {
     }
 }
 
+bool Watchdog::isRunning() const {
+    return m_running.load();
+}
+
+std::size_t Watchdog::count() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_watchables.size();
+}
+
 // TODO: Replace with Logger
 void Watchdog::monitorLoop(int interval_ms) {
     while (m_running.load()) {

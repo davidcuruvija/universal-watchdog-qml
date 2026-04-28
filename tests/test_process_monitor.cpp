@@ -81,4 +81,36 @@ TEST_CASE("ProcessMonitor tracks process lifecycle", "[ProcessMonitor]") {
       waitpid(pid, &status, 0);
     }
   }
+
+  SECTION("Monitor stopped/frozen process (T state)") {
+    pid_t pid = fork();
+    REQUIRE(pid >= 0);
+
+    if (pid == 0) {
+      // Child process loops infinitely until killed
+      while (true) {
+        usleep(10000);
+      }
+    } else {
+      // Parent process
+      usleep(50000); // Give the child time to fully start
+
+      auto monitor = std::make_shared<ProcessMonitor>(pid);
+
+      // Initially, the process is running normally
+      REQUIRE(monitor->isAlive() == true);
+
+      // Send SIGSTOP to freeze the process (puts it in 'T' state)
+      kill(pid, SIGSTOP);
+      usleep(50000); // Give OS time to update the state in /proc
+
+      // Our monitor should now report it as dead
+      REQUIRE(monitor->isAlive() == false);
+
+      // Clean up: brutally kill the stopped process and wait for it
+      kill(pid, SIGKILL);
+      int status;
+      waitpid(pid, &status, 0);
+    }
+  }
 }

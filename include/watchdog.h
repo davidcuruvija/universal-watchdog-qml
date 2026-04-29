@@ -8,9 +8,31 @@
 
 #include "watchable.h"
 
+/**
+ * @class Watchdog
+ * @brief Periodically monitors registered Watchable objects and reports their status.
+ *
+ * The Watchdog runs a background thread that iterates over all registered
+ * Watchable objects at a fixed interval, querying their `isAlive()` state and
+ * logging the result. It does not take any corrective action when an object is
+ * reported as dead — it only detects and reports.
+ *
+ * The class is non-copyable and non-movable because it owns a background thread.
+ *
+ * @note Currently logs to std::cout. Will be migrated to use the Logger class
+ *       once that component is integrated.
+ */
+
 class Watchdog{
 public:
+    /**
+     * @brief Constructs an empty Watchdog with no registered objects.
+     */
     Watchdog();
+
+    /**
+     * @brief Destructor. Ensures the monitoring thread is stopped cleanly.
+     */
     ~Watchdog();
 
     // Non-copyable, non-movable — owns a thread
@@ -19,21 +41,51 @@ public:
     Watchdog(Watchdog&&) = delete;
     Watchdog& operator=(Watchdog&&) = delete;
 
-    // Adds a watchable object to be monitored.
+    /**
+     * @brief Adds a Watchable object to be monitored.
+     *
+     * Thread-safe — can be called while the monitoring loop is running.
+     *
+     */
     void registerWatchable(std::shared_ptr<Watchable> w);
 
-    // Starts the monitoring loop in a background thread.
-    // Each iteration sleeps for interval_ms milliseconds.
+    /**
+     * @brief Starts the monitoring loop in a background thread.
+     *
+     * Each iteration queries all registered Watchable objects and logs their
+     * status. The loop sleeps for `interval_ms` milliseconds between iterations.
+     *
+     * Calling start() while already running is a no-op.
+     *
+     */
     void start(int interval_ms);
 
-    // Signals the monitoring loop to stop and joins the thread.
+    /**
+     * @brief Signals the monitoring thread to stop and joins it.
+     *
+     * Safe to call when the monitor is not running. Blocks the caller until
+     * the background thread has fully exited (up to one `interval_ms` duration
+     * if the thread is currently sleeping).
+     */
     void stop();
 
-    // Inspection methods (for tests)
+    /**
+     * @brief Checks whether the monitoring loop is currently active.
+     * @return true if start() has been called and stop() has not yet returned.
+     */
     bool isRunning() const;
+
+    /**
+     * @brief Returns the number of registered Watchable objects.
+     * @return Count of registered objects.
+     */
     std::size_t count() const;
 
 private:
+    /**
+     * @brief The body of the monitoring thread.
+     * @param interval_ms Sleep duration between iterations.
+     */
     void monitorLoop(int interval_ms);
 
     std::vector<std::shared_ptr<Watchable>> m_watchables;

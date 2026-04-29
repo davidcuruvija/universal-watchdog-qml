@@ -8,6 +8,7 @@
 
 #include "../include/watchdog.h"
 #include "../include/watchable.h"
+#include "../include/ThreadMonitor.h"
 
 namespace {
 
@@ -123,4 +124,45 @@ TEST_CASE("Destructor stops a running watchdog cleanly",
     }
     // No crash, no leaked thread = test passes
     SUCCEED("Destructor handled running watchdog without crashing");
+}
+
+TEST_CASE("Watchdog works with real ThreadMonitor",
+          "[watchdog][integration]") {
+    std::ostringstream captured;
+    CoutRedirect redirect(captured);
+
+    Watchdog wd;
+
+    // ThreadMonitor whose heartbeat is refreshed by a worker thread
+    auto liveMonitor = std::make_shared<ThreadMonitor>(
+        std::chrono::milliseconds(500), "live-thread");
+
+    // ThreadMonitor whose heartbeat is never refreshed — will appear dead
+    // after its short timeout expires
+    auto deadMonitor = std::make_shared<ThreadMonitor>(
+        std::chrono::milliseconds(10), "dead-thread");
+
+    wd.registerWatchable(liveMonitor);
+    wd.registerWatchable(deadMonitor);
+
+    // Simulate a healthy worker that keeps refreshing its heartbeat
+    std::atomic<bool> workerRunning{true};
+    std::thread worker([&liveMonitor, &workerRunning]() {
+        while (workerRunning.load()) {
+            liveMonitor->updateHeartbeat();
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+        }
+    });
+
+    wd.start(100);
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    wd.stop();
+
+    workerRunning = false;
+    worker.join();
+
+    const std::string output = captured.str();
+
+    REQUIRE(output.find("[live-thread] ALIVE") != std::string::npos);
+    REQUIRE(output.find("[dead-thread] DEAD") != std::string::npos);
 }

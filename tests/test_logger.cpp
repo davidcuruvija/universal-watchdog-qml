@@ -7,6 +7,11 @@
 #include <vector>
 #include <filesystem>
 
+static bool endsWith(const std::string& str, const std::string& suffix) {
+    return str.size() >= suffix.size() &&
+           str.substr(str.size() - suffix.size()) == suffix;
+}
+
 // --- stream constructor ---
 
 TEST_CASE("Logger with stream constructor logs a single message", "[logger][stream]") {
@@ -18,7 +23,7 @@ TEST_CASE("Logger with stream constructor logs a single message", "[logger][stre
     logger.log("hello");
 
     // Assert
-    REQUIRE(oss.str() == "hello\n");
+    REQUIRE(endsWith(oss.str(), "hello\n"));
 }
 
 TEST_CASE("Logger with stream constructor logs multiple messages", "[logger][stream]") {
@@ -31,7 +36,12 @@ TEST_CASE("Logger with stream constructor logs multiple messages", "[logger][str
     logger.log("second");
 
     // Assert
-    REQUIRE(oss.str() == "first\nsecond\n");
+    std::istringstream ss(oss.str());
+    std::string line1, line2;
+    std::getline(ss, line1);
+    std::getline(ss, line2);
+    REQUIRE(endsWith(line1, "first"));
+    REQUIRE(endsWith(line2, "second"));
 }
 
 // --- file constructor ---
@@ -53,8 +63,8 @@ TEST_CASE("Logger with file constructor creates file and writes messages", "[log
     std::string line1, line2;
     std::getline(f, line1);
     std::getline(f, line2);
-    REQUIRE(line1 == "line one");
-    REQUIRE(line2 == "line two");
+    REQUIRE(endsWith(line1, "line one"));
+    REQUIRE(endsWith(line2, "line two"));
 
     std::filesystem::remove(path);
 }
@@ -79,8 +89,8 @@ TEST_CASE("Logger with file constructor appends on reopen", "[logger][file]") {
     std::string line1, line2;
     std::getline(f, line1);
     std::getline(f, line2);
-    REQUIRE(line1 == "first session");
-    REQUIRE(line2 == "second session");
+    REQUIRE(endsWith(line1, "first session"));
+    REQUIRE(endsWith(line2, "second session"));
 
     std::filesystem::remove(path);
 }

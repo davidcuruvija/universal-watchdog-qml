@@ -7,7 +7,7 @@
 
 class Logger {
     public:
-        explicit Logger(std::string fileName);
+        explicit Logger(const std::string& fileName);
         explicit Logger(std::ostream& externalStream);
 
         ~Logger() = default;

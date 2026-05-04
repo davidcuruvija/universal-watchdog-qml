@@ -8,6 +8,7 @@
 
 #include "../include/watchdog.h"
 #include "../include/watchable.h"
+#include "../include/logger.h"
 #include "../include/ThreadMonitor.h"
 
 namespace {
@@ -28,22 +29,12 @@ private:
     bool m_alive;
 };
 
-// Helper: redirect std::cout into a stringstream for the duration of a scope
-class CoutRedirect {
-public:
-    explicit CoutRedirect(std::ostream& target)
-        : m_old(std::cout.rdbuf(target.rdbuf())) {}
-
-    ~CoutRedirect() { std::cout.rdbuf(m_old); }
-
-private:
-    std::streambuf* m_old;
-};
-
 }  // namespace
 
 TEST_CASE("Watchdog starts empty", "[watchdog]") {
-    Watchdog wd;
+    std::ostringstream oss;
+    Logger logger(oss);
+    Watchdog wd(logger);
 
     REQUIRE(wd.count() == 0);
     REQUIRE_FALSE(wd.isRunning());
@@ -51,7 +42,9 @@ TEST_CASE("Watchdog starts empty", "[watchdog]") {
 
 TEST_CASE("Registering watchables increases count",
           "[watchdog][register]") {
-    Watchdog wd;
+    std::ostringstream oss;
+    Logger logger(oss);
+    Watchdog wd(logger);
 
     wd.registerWatchable(std::make_shared<FakeWatchable>("first", true));
     wd.registerWatchable(std::make_shared<FakeWatchable>("second", false));
@@ -61,7 +54,9 @@ TEST_CASE("Registering watchables increases count",
 
 TEST_CASE("start() and stop() change running state",
           "[watchdog][lifecycle]") {
-    Watchdog wd;
+    std::ostringstream oss;
+    Logger logger(oss);
+    Watchdog wd(logger);
 
     wd.start(10);
     REQUIRE(wd.isRunning());
@@ -72,10 +67,10 @@ TEST_CASE("start() and stop() change running state",
 
 TEST_CASE("Monitor loop logs status of registered watchables",
           "[watchdog][monitoring]") {
-    std::ostringstream captured;
-    CoutRedirect redirect(captured);
+    std::ostringstream oss;
+    Logger logger(oss);
+    Watchdog wd(logger);
 
-    Watchdog wd;
     wd.registerWatchable(std::make_shared<FakeWatchable>("alpha", true));
     wd.registerWatchable(std::make_shared<FakeWatchable>("beta", false));
 
@@ -83,11 +78,7 @@ TEST_CASE("Monitor loop logs status of registered watchables",
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     wd.stop();
 
-    const std::string output = captured.str();
-
-    // Both watchables should appear in the output
-    REQUIRE(output.find("alpha") != std::string::npos);
-    REQUIRE(output.find("beta") != std::string::npos);
+    const std::string output = oss.str();
 
     // Their statuses should be reported correctly
     REQUIRE(output.find("[alpha] ALIVE") != std::string::npos);
@@ -95,7 +86,9 @@ TEST_CASE("Monitor loop logs status of registered watchables",
 }
 
 TEST_CASE("Calling start() twice is a no-op", "[watchdog][edge]") {
-    Watchdog wd;
+    std::ostringstream oss;
+    Logger logger(oss);
+    Watchdog wd(logger);
 
     wd.start(10);
     wd.start(10);  // Must not crash or spawn a second thread
@@ -106,7 +99,9 @@ TEST_CASE("Calling start() twice is a no-op", "[watchdog][edge]") {
 
 TEST_CASE("Calling stop() without start() is safe",
           "[watchdog][edge]") {
-    Watchdog wd;
+    std::ostringstream oss;
+    Logger logger(oss);
+    Watchdog wd(logger);
 
     wd.stop();  // Must not crash
 
@@ -115,8 +110,11 @@ TEST_CASE("Calling stop() without start() is safe",
 
 TEST_CASE("Destructor stops a running watchdog cleanly",
           "[watchdog][raii]") {
+
+    std::ostringstream oss;
+    Logger logger(oss);
     {
-        Watchdog wd;
+        Watchdog wd(logger);
         wd.registerWatchable(
             std::make_shared<FakeWatchable>("alive", true));
         wd.start(10);
@@ -128,10 +126,9 @@ TEST_CASE("Destructor stops a running watchdog cleanly",
 
 TEST_CASE("Watchdog works with real ThreadMonitor",
           "[watchdog][integration]") {
-    std::ostringstream captured;
-    CoutRedirect redirect(captured);
-
-    Watchdog wd;
+    std::ostringstream oss;
+    Logger logger(oss);
+    Watchdog wd(logger);
 
     // ThreadMonitor whose heartbeat is refreshed by a worker thread
     auto liveMonitor = std::make_shared<ThreadMonitor>(
@@ -161,7 +158,7 @@ TEST_CASE("Watchdog works with real ThreadMonitor",
     workerRunning = false;
     worker.join();
 
-    const std::string output = captured.str();
+    const std::string output = oss.str();
 
     REQUIRE(output.find("[live-thread] ALIVE") != std::string::npos);
     REQUIRE(output.find("[dead-thread] DEAD") != std::string::npos);

@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "watchable.h"
+#include "logger.h" 
 
 /**
  * @class Watchdog
@@ -26,9 +27,9 @@
 class Watchdog{
 public:
     /**
-     * @brief Constructs an empty Watchdog with no registered objects.
+     * @brief Constructs a Watchdog that logs status updates via the given logger.
      */
-    Watchdog();
+    explicit Watchdog(Logger& logger);
 
     /**
      * @brief Destructor. Ensures the monitoring thread is stopped cleanly.
@@ -88,6 +89,7 @@ private:
      */
     void monitorLoop(int interval_ms);
 
+    Logger& m_logger;
     std::vector<std::shared_ptr<Watchable>> m_watchables;
     mutable std::mutex m_mutex;
     std::atomic<bool> m_running;

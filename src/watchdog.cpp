@@ -3,8 +3,9 @@
 #include <chrono>
 #include <iostream>
 
-Watchdog::Watchdog()
-    : m_running(false) {
+Watchdog::Watchdog(Logger& logger)
+    : m_logger(logger)
+    , m_running(false) {
 }
 
 Watchdog::~Watchdog() {
@@ -48,7 +49,7 @@ void Watchdog::monitorLoop(int interval_ms) {
             std::lock_guard<std::mutex> lock(m_mutex);
             for (const auto& w : m_watchables) {
                 const std::string status = w->isAlive() ? "ALIVE" : "DEAD";
-                std::cout << "[" << w->name() << "] " << status << '\n';
+                m_logger.log("[" + w->name() + "] " + status);
             }
         }
         std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms));

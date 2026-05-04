@@ -24,6 +24,7 @@ option(WATCHDOG_BUILD_TESTS "Build unit tests" ON)
 add_library(watchdog_core
     src/logger.cpp
     src/ThreadMonitor.cpp
+    src/ProcessMonitor.cpp
 )
 
 target_include_directories(watchdog_core

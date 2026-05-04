@@ -16,7 +16,6 @@ private:
   std::string m_name; ///< The name of the monitored process.
   pid_t m_pid;        ///< The Process ID (PID) of the monitored process.
 
-protected:
   /**
    * @brief Returns the absolute filesystem path to the process's status file.
    *
@@ -25,7 +24,7 @@ protected:
    *
    * @return std::string The absolute path to the status file.
    */
-  virtual std::string getStatPath() const {
+  std::string getStatPath() const {
     return "/proc/" + std::to_string(m_pid) + "/stat";
   }
 

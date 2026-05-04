@@ -22,13 +22,13 @@ option(WATCHDOG_BUILD_TESTS "Build unit tests" ON)
 # Watchdog core library
 # -----------------------------------------------------------------------------
 add_library(watchdog_core
+    src/ThreadMonitor.cpp
     src/ProcessMonitor.cpp
 )
 
 target_include_directories(watchdog_core
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
-        ${CMAKE_CURRENT_SOURCE_DIR}/src
 )
 
 # Threads za std::mutex, std::thread

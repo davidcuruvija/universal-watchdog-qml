@@ -4,6 +4,7 @@
 #include <csignal>
 #include <fstream>
 #include <string>
+#include <stdexcept>
 
 static std::string getProcessName(pid_t targetPid) {
   std::string path = "/proc/" + std::to_string(targetPid) + "/comm";
@@ -15,7 +16,7 @@ static std::string getProcessName(pid_t targetPid) {
     return processName;
   }
 
-  return "UnknownProcess";
+  throw std::invalid_argument("Process with given PID does not exist");
 }
 
 ProcessMonitor::ProcessMonitor(pid_t pid)

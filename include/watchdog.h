@@ -4,6 +4,7 @@
 #include <memory>
 #include <mutex>
 #include <thread>
+#include <condition_variable>
 #include <vector>
 
 #include "watchable.h"
@@ -20,8 +21,6 @@
  *
  * The class is non-copyable and non-movable because it owns a background thread.
  *
- * @note Currently logs to std::cout. Will be migrated to use the Logger class
- *       once that component is integrated.
  */
 
 class Watchdog{
@@ -64,9 +63,9 @@ public:
     /**
      * @brief Signals the monitoring thread to stop and joins it.
      *
-     * Safe to call when the monitor is not running. Blocks the caller until
-     * the background thread has fully exited (up to one `interval_ms` duration
-     * if the thread is currently sleeping).
+     * Safe to call when the monitor is not running. Returns quickly thanks
+     * to a condition variable that wakes the monitoring thread immediately.
+     * 
      */
     void stop();
 
@@ -94,5 +93,8 @@ private:
     mutable std::mutex m_mutex;
     std::atomic<bool> m_running;
     std::thread m_monitorThread;
+
+    std::condition_variable m_stopCv;
+    std::mutex m_stopMutex;
 
 };

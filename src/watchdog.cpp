@@ -28,6 +28,13 @@ void Watchdog::stop() {
     if (!m_running.exchange(false)) {
         return;  // Was not running
     }
+
+    // Wake up the monitor thread immediately if it's sleeping
+    {
+        std::lock_guard<std::mutex> lock(m_stopMutex);
+    }
+    m_stopCv.notify_all();
+
     if (m_monitorThread.joinable()) {
         m_monitorThread.join();
     }
@@ -42,9 +49,10 @@ std::size_t Watchdog::count() const {
     return m_watchables.size();
 }
 
-// TODO: Replace with Logger
+
 void Watchdog::monitorLoop(int interval_ms) {
     while (m_running.load()) {
+        // Check all watchables and log their status
         {
             std::lock_guard<std::mutex> lock(m_mutex);
             for (const auto& w : m_watchables) {
@@ -52,6 +60,11 @@ void Watchdog::monitorLoop(int interval_ms) {
                 m_logger.log("[" + w->name() + "] " + status);
             }
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(interval_ms));
+
+        // Wait up to interval_ms, but wake up early if stop() is called
+        std::unique_lock<std::mutex> lock(m_stopMutex);
+        m_stopCv.wait_for(lock, 
+                        std::chrono::milliseconds(interval_ms),
+                        [this] {return !m_running.load();});
     }
 }

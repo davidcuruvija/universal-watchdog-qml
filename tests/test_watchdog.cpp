@@ -124,6 +124,29 @@ TEST_CASE("Destructor stops a running watchdog cleanly",
     SUCCEED("Destructor handled running watchdog without crashing");
 }
 
+TEST_CASE("stop() returns quickly even with long interval",
+          "[watchdog][stop][performance]") {
+    std::ostringstream oss;
+    Logger logger(oss);
+    Watchdog wd(logger);
+
+    wd.registerWatchable(std::make_shared<FakeWatchable>("worker", true));
+    wd.start(60000);   // 60-second interval 
+
+    // Allow one iteration to log
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+
+    const auto stopStart = std::chrono::steady_clock::now();
+    wd.stop();
+    const auto stopEnd = std::chrono::steady_clock::now();
+
+    const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+        stopEnd - stopStart).count();
+
+    // stop() should return in well under a second, despite 60-second interval
+    REQUIRE(elapsed < 1000);
+}
+
 TEST_CASE("Watchdog works with real ThreadMonitor",
           "[watchdog][integration]") {
     std::ostringstream oss;

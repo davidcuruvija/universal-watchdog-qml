@@ -34,7 +34,16 @@ The system is built around three core components:
 ### Build
 
 ```bash
-g++ -std=c++17 main.cpp -o watchdog -pthread
+mkdir -p build
+cd build
+cmake ..
+make
+```
+
+### Running Tests
+
+```bash
+./build/tests/watchdog_tests
 ```
 
 ## Limitations

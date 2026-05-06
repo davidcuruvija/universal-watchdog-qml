@@ -25,6 +25,7 @@ add_library(watchdog_core
     src/logger.cpp
     src/ThreadMonitor.cpp
     src/watchdog.cpp
+    src/ProcessMonitor.cpp
 )
 
 target_include_directories(watchdog_core

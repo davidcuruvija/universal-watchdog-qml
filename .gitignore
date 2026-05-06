@@ -15,4 +15,8 @@ compile_commands.json
 .idea/
 *.swp
 
+# Doxygen
+html/
+latex/
+
 

@@ -14,6 +14,7 @@ include(Catch)
 add_executable(watchdog_tests
     test_logger.cpp
     test_ThreadMonitor.cpp
+    test_watchdog.cpp
     test_ProcessMonitor.cpp
 )
 

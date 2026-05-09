@@ -1,4 +1,5 @@
 #pragma once
+#include "Config.h"
 #include <string>
 #include <fstream>
 #include <ostream>
@@ -13,6 +14,12 @@
  */
 class Logger {
 public:
+    /**
+     * @brief Constructs a Logger from a Config, writing to the configured log file.
+     * @param config Project configuration. Uses config.logFile as the output path.
+     */
+    explicit Logger(const Config& config);
+
     /**
      * @brief Constructs a Logger that writes to a file.
      * @param fileName Path to the output log file. Created if it does not exist.

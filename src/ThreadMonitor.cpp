@@ -1,5 +1,10 @@
 #include "ThreadMonitor.h"
 
+ThreadMonitor::ThreadMonitor(const Config& config, std::string threadName)
+    : ThreadMonitor(config.heartbeatTimeout, std::move(threadName))
+{
+}
+
 ThreadMonitor::ThreadMonitor(std::chrono::milliseconds timeout, std::string threadName)
     : m_timeout(timeout)
     , m_threadName(std::move(threadName))

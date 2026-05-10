@@ -17,6 +17,10 @@ void Watchdog::registerWatchable(std::shared_ptr<Watchable> w) {
     m_watchables.push_back(std::move(w));
 }
 
+void Watchdog::start(const Config& config) {
+    start(static_cast<int>(config.pollInterval.count()));
+}
+
 void Watchdog::start(int interval_ms) {
     if (m_running.exchange(true)) {
         return;  // Already running

@@ -10,6 +10,7 @@
 #include "../include/watchable.h"
 #include "../include/logger.h"
 #include "../include/ThreadMonitor.h"
+#include "../include/Config.h"
 
 namespace {
 
@@ -145,6 +146,24 @@ TEST_CASE("stop() returns quickly even with long interval",
 
     // stop() should return in well under a second, despite 60-second interval
     REQUIRE(elapsed < 1000);
+}
+
+TEST_CASE("Watchdog::start(Config) uses pollInterval from config",
+          "[watchdog][config]") {
+    std::ostringstream oss;
+    Logger logger(oss);
+    Watchdog wd(logger);
+
+    wd.registerWatchable(std::make_shared<FakeWatchable>("worker", true));
+
+    Config config;
+    config.pollInterval = std::chrono::milliseconds(10);
+
+    wd.start(config);
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    wd.stop();
+
+    REQUIRE(oss.str().find("[worker] ALIVE") != std::string::npos);
 }
 
 TEST_CASE("Watchdog works with real ThreadMonitor",

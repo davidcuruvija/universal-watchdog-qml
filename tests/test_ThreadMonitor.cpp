@@ -86,3 +86,80 @@ TEST_CASE("ThreadMonitor handles concurrent heartbeat and isAlive calls", "[thre
 
     REQUIRE(tm.isAlive());
 }
+
+TEST_CASE("ThreadMonitor with zero timeout is always dead", "[threadMonitor][edge]") {
+    ThreadMonitor tm(0ms, "zero-timeout");
+
+    bool result = tm.isAlive();
+
+    REQUIRE_FALSE(result);
+}
+
+TEST_CASE("ThreadMonitor heartbeat resets countdown from last heartbeat, not from now", "[threadMonitor][heartbeat][timing]") {
+    ThreadMonitor tm(100ms, "timing-check");
+
+    std::this_thread::sleep_for(90ms);
+    REQUIRE(tm.isAlive());
+
+    tm.updateHeartbeat();
+
+    std::this_thread::sleep_for(90ms);
+    REQUIRE(tm.isAlive());
+
+    std::this_thread::sleep_for(20ms);
+    REQUIRE_FALSE(tm.isAlive());
+}
+
+TEST_CASE("ThreadMonitor simulates stuck thread - heartbeat stops mid-run", "[threadMonitor][stuck]") {
+    ThreadMonitor tm(50ms, "stuck-thread");
+    std::atomic<bool> stuck{false};
+
+    std::thread worker([&] {
+        for (int i = 0; i < 5; ++i) {
+            tm.updateHeartbeat();
+            std::this_thread::sleep_for(20ms);
+        }
+        stuck.store(true);
+        std::this_thread::sleep_for(200ms);
+    });
+
+    while (!stuck.load()) {
+        REQUIRE(tm.isAlive());
+        std::this_thread::sleep_for(10ms);
+    }
+
+    std::this_thread::sleep_for(100ms);
+    REQUIRE_FALSE(tm.isAlive());
+
+    worker.join();
+}
+
+TEST_CASE("ThreadMonitor simulates zombie thread - thread ended but monitor still exists", "[threadMonitor][zombie]") {
+    ThreadMonitor tm(100ms, "zombie-thread");
+
+    {
+        std::thread worker([&] {
+            tm.updateHeartbeat();
+        });
+        worker.detach();
+    }
+
+    std::this_thread::sleep_for(20ms);
+    REQUIRE(tm.isAlive());
+
+    std::this_thread::sleep_for(150ms);
+    REQUIRE_FALSE(tm.isAlive());
+}
+
+TEST_CASE("ThreadMonitor multiple rapid heartbeats do not corrupt state", "[threadMonitor][heartbeat][rapid]") {
+    ThreadMonitor tm(50ms, "rapid-beat");
+
+    for (int i = 0; i < 1000; ++i) {
+        tm.updateHeartbeat();
+    }
+
+    REQUIRE(tm.isAlive());
+
+    std::this_thread::sleep_for(100ms);
+    REQUIRE_FALSE(tm.isAlive());
+}

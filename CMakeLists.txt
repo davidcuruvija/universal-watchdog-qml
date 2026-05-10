@@ -44,3 +44,9 @@ if(WATCHDOG_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
+
+# -----------------------------------------------------------------------------
+# Watchdog application (executable)
+# -----------------------------------------------------------------------------
+add_executable(watchdog_app src/main.cpp)
+target_link_libraries(watchdog_app PRIVATE watchdog_core)

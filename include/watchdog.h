@@ -8,7 +8,8 @@
 #include <vector>
 
 #include "watchable.h"
-#include "logger.h" 
+#include "logger.h"
+#include "Config.h"
 
 /**
  * @class Watchdog
@@ -48,6 +49,12 @@ public:
      *
      */
     void registerWatchable(std::shared_ptr<Watchable> w);
+
+    /**
+     * @brief Starts the monitoring loop using project-wide config.
+     * @param config Project configuration. Uses config.pollInterval.
+     */
+    void start(const Config& config);
 
     /**
      * @brief Starts the monitoring loop in a background thread.
@@ -96,5 +103,4 @@ private:
 
     std::condition_variable m_stopCv;
     std::mutex m_stopMutex;
-
 };

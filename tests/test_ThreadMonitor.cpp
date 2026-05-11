@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include "ThreadMonitor.h"
+#include "Config.h"
 
 using namespace std::chrono_literals;
 
@@ -59,6 +60,19 @@ TEST_CASE("ThreadMonitor works polymorphically through a Watchable pointer", "[t
 
     REQUIRE(aliveResult);
     REQUIRE(nameResult == "via-base");
+}
+
+TEST_CASE("ThreadMonitor(Config) uses heartbeatTimeout from config", "[threadMonitor][config]") {
+    Config config;
+    config.heartbeatTimeout = 50ms;
+
+    ThreadMonitor tm(config, "config-thread");
+
+    REQUIRE(tm.timeout() == 50ms);
+    REQUIRE(tm.isAlive());
+
+    std::this_thread::sleep_for(150ms);
+    REQUIRE_FALSE(tm.isAlive());
 }
 
 TEST_CASE("ThreadMonitor handles concurrent heartbeat and isAlive calls", "[threadMonitor][concurrency]") {

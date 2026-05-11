@@ -13,6 +13,11 @@ static std::string currentTimestamp() {
     return std::string("[") + buf + "] ";
 }
 
+Logger::Logger(const Config& config)
+    : Logger(config.logFile)
+{
+}
+
 Logger::Logger(const std::string& fileName)
     : m_ownedFile(std::make_unique<std::ofstream>(fileName, std::ios::app))
     , m_outStream(*m_ownedFile)

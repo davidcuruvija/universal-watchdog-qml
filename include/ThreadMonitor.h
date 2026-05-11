@@ -1,5 +1,6 @@
 #pragma once
 #include "watchable.h"
+#include "Config.h"
 #include <string>
 #include <chrono>
 #include <mutex>
@@ -12,6 +13,13 @@
  */
 class ThreadMonitor : public Watchable {
 public:
+    /**
+     * @brief Constructs a ThreadMonitor using project-wide config.
+     * @param config Project configuration. Uses config.heartbeatTimeout.
+     * @param threadName Human-readable name identifying the monitored thread.
+     */
+    ThreadMonitor(const Config& config, std::string threadName);
+
     /**
      * @brief Constructs a ThreadMonitor.
      * @param timeout Maximum allowed time between heartbeats.

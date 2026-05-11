@@ -51,6 +51,16 @@ public:
     void registerWatchable(std::shared_ptr<Watchable> w);
 
     /**
+     * @brief Remove a registered Watchable by its reported name.
+     *
+     * Thread-safe. If multiple watchables share the same name, only the
+     * first one found is removed.
+     *
+     * @return true if a matching object was found and removed; false otherwise.
+     */
+    bool unregisterByName(const std::string& name);
+
+    /**
      * @brief Starts the monitoring loop using project-wide config.
      * @param config Project configuration. Uses config.pollInterval.
      */

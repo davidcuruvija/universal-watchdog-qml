@@ -2,6 +2,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <algorithm>
 
 Watchdog::Watchdog(Logger& logger)
     : m_logger(logger)
@@ -15,6 +16,23 @@ Watchdog::~Watchdog() {
 void Watchdog::registerWatchable(std::shared_ptr<Watchable> w) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_watchables.push_back(std::move(w));
+}
+
+bool Watchdog::unregisterByName(const std::string& name) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    auto it = std::find_if(
+        m_watchables.begin(), m_watchables.end(),
+        [&name](const std::shared_ptr<Watchable>& w) {
+            return w->name() == name;
+        });
+
+    if (it == m_watchables.end()) {
+        return false;
+    }
+
+    m_watchables.erase(it);
+    return true;
 }
 
 void Watchdog::start(const Config& config) {

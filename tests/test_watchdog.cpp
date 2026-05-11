@@ -166,6 +166,78 @@ TEST_CASE("Watchdog::start(Config) uses pollInterval from config",
     REQUIRE(oss.str().find("[worker] ALIVE") != std::string::npos);
 }
 
+TEST_CASE("unregisterByName removes a matching watchable",
+          "[watchdog][unregister]") {
+    std::ostringstream oss;
+    Logger logger(oss);
+    Watchdog wd(logger);
+
+    wd.registerWatchable(std::make_shared<FakeWatchable>("alpha", true));
+    wd.registerWatchable(std::make_shared<FakeWatchable>("beta", true));
+    REQUIRE(wd.count() == 2);
+
+    const bool removed = wd.unregisterByName("alpha");
+
+    REQUIRE(removed);
+    REQUIRE(wd.count() == 1);
+}
+
+TEST_CASE("unregisterByName returns false for unknown name",
+          "[watchdog][unregister]") {
+    std::ostringstream oss;
+    Logger logger(oss);
+    Watchdog wd(logger);
+
+    wd.registerWatchable(std::make_shared<FakeWatchable>("alpha", true));
+
+    const bool removed = wd.unregisterByName("nonexistent");
+
+    REQUIRE_FALSE(removed);
+    REQUIRE(wd.count() == 1);
+}
+
+TEST_CASE("unregisterByName removes only the first match when duplicates exist",
+          "[watchdog][unregister][edge]") {
+    std::ostringstream oss;
+    Logger logger(oss);
+    Watchdog wd(logger);
+
+    wd.registerWatchable(std::make_shared<FakeWatchable>("worker", true));
+    wd.registerWatchable(std::make_shared<FakeWatchable>("worker", false));
+    REQUIRE(wd.count() == 2);
+
+    const bool removed = wd.unregisterByName("worker");
+
+    REQUIRE(removed);
+    REQUIRE(wd.count() == 1);
+
+    // Second call should also succeed (the duplicate is still there)
+    REQUIRE(wd.unregisterByName("worker"));
+    REQUIRE(wd.count() == 0);
+}
+
+TEST_CASE("unregisterByName works while the monitor loop is running",
+          "[watchdog][unregister][threading]") {
+    std::ostringstream oss;
+    Logger logger(oss);
+    Watchdog wd(logger);
+
+    wd.registerWatchable(std::make_shared<FakeWatchable>("alpha", true));
+    wd.registerWatchable(std::make_shared<FakeWatchable>("beta", true));
+
+    wd.start(10);
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+
+    // Remove while running — must not crash, must not deadlock
+    const bool removed = wd.unregisterByName("alpha");
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+    wd.stop();
+
+    REQUIRE(removed);
+    REQUIRE(wd.count() == 1);
+}
+
 TEST_CASE("Watchdog works with real ThreadMonitor",
           "[watchdog][integration]") {
     std::ostringstream oss;

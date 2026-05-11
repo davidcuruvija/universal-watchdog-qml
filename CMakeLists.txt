@@ -38,6 +38,12 @@ find_package(Threads REQUIRED)
 target_link_libraries(watchdog_core PUBLIC Threads::Threads)
 
 # -----------------------------------------------------------------------------
+# Watchdog executable
+# -----------------------------------------------------------------------------
+add_executable(watchdog src/main.cpp)
+target_link_libraries(watchdog PRIVATE watchdog_core)
+
+# -----------------------------------------------------------------------------
 # Tests
 # -----------------------------------------------------------------------------
 if(WATCHDOG_BUILD_TESTS)

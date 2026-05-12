@@ -13,8 +13,10 @@
  */
 class ProcessMonitor : public Watchable {
 private:
-  std::string m_name; ///< The name of the monitored process.
   pid_t m_pid;        ///< The Process ID (PID) of the monitored process.
+  std::string m_processName;  ///< Raw process name 
+  std::string m_name; ///< Name including PID (e.g. "firefox (pid=1234)")
+  
 
   /**
    * @brief Returns the absolute filesystem path to the process's status file.

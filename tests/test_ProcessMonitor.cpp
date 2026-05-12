@@ -30,7 +30,7 @@ TEST_CASE("ProcessMonitor tracks a process that terminates naturally", "[Process
 
   // 2. Verify it is alive at the start AND check the name
   REQUIRE(monitor->isAlive() == true);
-  REQUIRE(monitor->name() == "sleep");
+  REQUIRE(monitor->name() == "sleep (pid=" + std::to_string(externalPid) + ")");
 
   // 3. Wait for 1.5 seconds so the process has time to finish naturally
   usleep(1500000);
@@ -45,7 +45,7 @@ TEST_CASE("ProcessMonitor tracks system init process (PID 1)", "[ProcessMonitor]
   REQUIRE(monitor->isAlive() == true);
 
   // For the tested Ubuntu Linux system, PID 1 name is systemd
-  REQUIRE(monitor->name() == "systemd");
+  REQUIRE(monitor->name() == "systemd (pid=1)");
 }
 
 TEST_CASE("ProcessMonitor throws on invalid/non-existent process", "[ProcessMonitor]") {

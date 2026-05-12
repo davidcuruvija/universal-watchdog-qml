@@ -20,7 +20,7 @@ static std::string getProcessName(pid_t targetPid) {
 }
 
 ProcessMonitor::ProcessMonitor(pid_t pid)
-    : m_name(getProcessName(pid)), m_pid(pid) {}
+    :m_pid(pid), m_processName(getProcessName(pid)), m_name(m_processName + " (pid=" + std::to_string(pid) + ")") {}
 
 std::string ProcessMonitor::name() const { return m_name; }
 
@@ -44,7 +44,7 @@ bool ProcessMonitor::isAlive() const {
 
   std::string processName =
       line.substr(lparenPos + 1, rparenPos - lparenPos - 1);
-  std::string expectedName = m_name;
+  std::string expectedName = m_processName;
   if (expectedName.length() > 15) {
     expectedName = expectedName.substr(0, 15);
   }

@@ -30,12 +30,20 @@ private:
     bool m_alive;
 };
 
+// Helper: build a Config tailored for fast tests
+Config testConfig(int pollMs = 10, int summaryMs = 60000) {
+    Config c;
+    c.pollInterval = std::chrono::milliseconds(pollMs);
+    c.summaryInterval = std::chrono::milliseconds(summaryMs);
+    return c;
+}
+
 }  // namespace
 
 TEST_CASE("Watchdog starts empty", "[watchdog]") {
     std::ostringstream oss;
     Logger logger(oss);
-    Watchdog wd(logger);
+    Watchdog wd(logger, testConfig());
 
     REQUIRE(wd.count() == 0);
     REQUIRE_FALSE(wd.isRunning());
@@ -45,7 +53,7 @@ TEST_CASE("Registering watchables increases count",
           "[watchdog][register]") {
     std::ostringstream oss;
     Logger logger(oss);
-    Watchdog wd(logger);
+    Watchdog wd(logger, testConfig());
 
     wd.registerWatchable(std::make_shared<FakeWatchable>("first", true));
     wd.registerWatchable(std::make_shared<FakeWatchable>("second", false));
@@ -57,9 +65,9 @@ TEST_CASE("start() and stop() change running state",
           "[watchdog][lifecycle]") {
     std::ostringstream oss;
     Logger logger(oss);
-    Watchdog wd(logger);
+    Watchdog wd(logger, testConfig());
 
-    wd.start(10);
+    wd.start();
     REQUIRE(wd.isRunning());
 
     wd.stop();
@@ -70,12 +78,12 @@ TEST_CASE("Monitor loop logs status of registered watchables",
           "[watchdog][monitoring]") {
     std::ostringstream oss;
     Logger logger(oss);
-    Watchdog wd(logger);
+    Watchdog wd(logger, testConfig());
 
     wd.registerWatchable(std::make_shared<FakeWatchable>("alpha", true));
     wd.registerWatchable(std::make_shared<FakeWatchable>("beta", false));
 
-    wd.start(10);
+    wd.start();
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
     wd.stop();
 
@@ -89,10 +97,10 @@ TEST_CASE("Monitor loop logs status of registered watchables",
 TEST_CASE("Calling start() twice is a no-op", "[watchdog][edge]") {
     std::ostringstream oss;
     Logger logger(oss);
-    Watchdog wd(logger);
+    Watchdog wd(logger, testConfig());
 
-    wd.start(10);
-    wd.start(10);  // Must not crash or spawn a second thread
+    wd.start();
+    wd.start();  // Must not crash or spawn a second thread
 
     REQUIRE(wd.isRunning());
     wd.stop();
@@ -102,7 +110,7 @@ TEST_CASE("Calling stop() without start() is safe",
           "[watchdog][edge]") {
     std::ostringstream oss;
     Logger logger(oss);
-    Watchdog wd(logger);
+    Watchdog wd(logger, testConfig());
 
     wd.stop();  // Must not crash
 
@@ -115,10 +123,10 @@ TEST_CASE("Destructor stops a running watchdog cleanly",
     std::ostringstream oss;
     Logger logger(oss);
     {
-        Watchdog wd(logger);
+        Watchdog wd(logger, testConfig());
         wd.registerWatchable(
             std::make_shared<FakeWatchable>("alive", true));
-        wd.start(10);
+        wd.start();
         // Watchdog goes out of scope while running
     }
     // No crash, no leaked thread = test passes
@@ -129,10 +137,10 @@ TEST_CASE("stop() returns quickly even with long interval",
           "[watchdog][stop][performance]") {
     std::ostringstream oss;
     Logger logger(oss);
-    Watchdog wd(logger);
+    Watchdog wd(logger, testConfig(60000));
 
     wd.registerWatchable(std::make_shared<FakeWatchable>("worker", true));
-    wd.start(60000);   // 60-second interval 
+    wd.start();   // 60-second interval 
 
     // Allow one iteration to log
     std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -148,29 +156,11 @@ TEST_CASE("stop() returns quickly even with long interval",
     REQUIRE(elapsed < 1000);
 }
 
-TEST_CASE("Watchdog::start(Config) uses pollInterval from config",
-          "[watchdog][config]") {
-    std::ostringstream oss;
-    Logger logger(oss);
-    Watchdog wd(logger);
-
-    wd.registerWatchable(std::make_shared<FakeWatchable>("worker", true));
-
-    Config config;
-    config.pollInterval = std::chrono::milliseconds(10);
-
-    wd.start(config);
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    wd.stop();
-
-    REQUIRE(oss.str().find("[worker] ALIVE") != std::string::npos);
-}
-
 TEST_CASE("unregisterByName removes a matching watchable",
           "[watchdog][unregister]") {
     std::ostringstream oss;
     Logger logger(oss);
-    Watchdog wd(logger);
+    Watchdog wd(logger, testConfig());
 
     wd.registerWatchable(std::make_shared<FakeWatchable>("alpha", true));
     wd.registerWatchable(std::make_shared<FakeWatchable>("beta", true));
@@ -186,7 +176,7 @@ TEST_CASE("unregisterByName returns false for unknown name",
           "[watchdog][unregister]") {
     std::ostringstream oss;
     Logger logger(oss);
-    Watchdog wd(logger);
+    Watchdog wd(logger, testConfig());
 
     wd.registerWatchable(std::make_shared<FakeWatchable>("alpha", true));
 
@@ -200,7 +190,7 @@ TEST_CASE("unregisterByName removes only the first match when duplicates exist",
           "[watchdog][unregister][edge]") {
     std::ostringstream oss;
     Logger logger(oss);
-    Watchdog wd(logger);
+    Watchdog wd(logger, testConfig());
 
     wd.registerWatchable(std::make_shared<FakeWatchable>("worker", true));
     wd.registerWatchable(std::make_shared<FakeWatchable>("worker", false));
@@ -220,12 +210,12 @@ TEST_CASE("unregisterByName works while the monitor loop is running",
           "[watchdog][unregister][threading]") {
     std::ostringstream oss;
     Logger logger(oss);
-    Watchdog wd(logger);
+    Watchdog wd(logger, testConfig());
 
     wd.registerWatchable(std::make_shared<FakeWatchable>("alpha", true));
     wd.registerWatchable(std::make_shared<FakeWatchable>("beta", true));
 
-    wd.start(10);
+    wd.start();
     std::this_thread::sleep_for(std::chrono::milliseconds(30));
 
     // Remove while running — must not crash, must not deadlock
@@ -238,11 +228,103 @@ TEST_CASE("unregisterByName works while the monitor loop is running",
     REQUIRE(wd.count() == 1);
 }
 
+TEST_CASE("Logs only on state change",
+          "[watchdog][state-change]") {
+    std::ostringstream oss;
+    Logger logger(oss);
+    // Long summary interval so it doesn't fire during the test
+    Watchdog wd(logger, testConfig(10, 60000));
+
+    auto target = std::make_shared<FakeWatchable>("worker", true);
+    wd.registerWatchable(target);
+
+    wd.start();
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    wd.stop();
+
+    const std::string output = oss.str();
+
+    // Count occurrences of "[worker] ALIVE"
+    size_t aliveCount = 0;
+    size_t pos = 0;
+    while ((pos = output.find("[worker] ALIVE", pos)) != std::string::npos) {
+        ++aliveCount;
+        ++pos;
+    }
+
+    // Should be exactly 1 (initial check), maybe 2 due to timing edge cases.
+    // Definitely not 10+ which the old behavior would produce.
+    REQUIRE(aliveCount >= 1);
+    REQUIRE(aliveCount <= 3);
+}
+
+TEST_CASE("Detects state transitions",
+          "[watchdog][state-change]") {
+    std::ostringstream oss;
+    Logger logger(oss);
+    Watchdog wd(logger, testConfig(10, 60000));
+
+    auto target = std::make_shared<FakeWatchable>("worker", true);
+    wd.registerWatchable(target);
+
+    wd.start();
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+
+    target->setAlive(false);
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+
+    target->setAlive(true);
+    std::this_thread::sleep_for(std::chrono::milliseconds(30));
+
+    wd.stop();
+
+    const std::string output = oss.str();
+
+    // Should see ALIVE, then DEAD, then ALIVE again
+    const auto firstAlive = output.find("[worker] ALIVE");
+    REQUIRE(firstAlive != std::string::npos);
+
+    const auto firstDead = output.find("[worker] DEAD");
+    REQUIRE(firstDead != std::string::npos);
+    REQUIRE(firstAlive < firstDead);
+
+    const auto secondAlive = output.find("[worker] ALIVE", firstDead);
+    REQUIRE(secondAlive != std::string::npos);
+}
+
+TEST_CASE("Periodic summary logs even without state change",
+          "[watchdog][summary]") {
+    std::ostringstream oss;
+    Logger logger(oss);
+    // Very short summary interval so test completes quickly
+    Watchdog wd(logger, testConfig(/*pollMs=*/10, /*summaryMs=*/30));
+
+    wd.registerWatchable(std::make_shared<FakeWatchable>("stable", true));
+
+    wd.start();
+    std::this_thread::sleep_for(std::chrono::milliseconds(120));
+    wd.stop();
+
+    const std::string output = oss.str();
+
+    // With pollInterval=10 and summaryInterval=30, over 120ms we expect:
+    // initial check + at least 2-3 summaries
+    size_t aliveCount = 0;
+    size_t pos = 0;
+    while ((pos = output.find("[stable] ALIVE", pos)) != std::string::npos) {
+        ++aliveCount;
+        ++pos;
+    }
+
+    // Should be more than just the initial entry
+    REQUIRE(aliveCount >= 2);
+}
+
 TEST_CASE("Watchdog works with real ThreadMonitor",
           "[watchdog][integration]") {
     std::ostringstream oss;
     Logger logger(oss);
-    Watchdog wd(logger);
+    Watchdog wd(logger, testConfig(100));
 
     // ThreadMonitor whose heartbeat is refreshed by a worker thread
     auto liveMonitor = std::make_shared<ThreadMonitor>(
@@ -265,7 +347,7 @@ TEST_CASE("Watchdog works with real ThreadMonitor",
         }
     });
 
-    wd.start(100);
+    wd.start();
     std::this_thread::sleep_for(std::chrono::milliseconds(250));
     wd.stop();
 

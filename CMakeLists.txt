@@ -37,6 +37,7 @@ target_include_directories(watchdog_core
 find_package(Threads REQUIRED)
 target_link_libraries(watchdog_core PUBLIC Threads::Threads)
 
+
 # -----------------------------------------------------------------------------
 # Tests
 # -----------------------------------------------------------------------------

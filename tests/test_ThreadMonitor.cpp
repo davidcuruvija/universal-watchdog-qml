@@ -101,6 +101,9 @@ TEST_CASE("ThreadMonitor handles concurrent heartbeat and isAlive calls", "[thre
     REQUIRE(tm.isAlive());
 }
 
+#include <queue>
+#include <condition_variable>
+
 TEST_CASE("ThreadMonitor with zero timeout is always dead", "[threadMonitor][edge]") {
     ThreadMonitor tm(0ms, "zero-timeout");
 
@@ -176,4 +179,88 @@ TEST_CASE("ThreadMonitor multiple rapid heartbeats do not corrupt state", "[thre
 
     std::this_thread::sleep_for(100ms);
     REQUIRE_FALSE(tm.isAlive());
+}
+
+TEST_CASE("ThreadMonitor state: ALIVE", "[threadMonitor][states]") {
+    ThreadMonitor tm(100ms, "AliveThread");
+    std::atomic<bool> stop{false};
+    std::queue<int> tasks;
+    std::mutex mtx;
+    std::condition_variable cv;
+
+    std::thread worker([&]() {
+        while (!stop) {
+            {
+                std::unique_lock<std::mutex> lock(mtx);
+                cv.wait_for(lock, 30ms, [&]{ return !tasks.empty() || stop; });
+                if (!tasks.empty()) tasks.pop();
+            }
+            tm.updateHeartbeat();
+        }
+    });
+
+    for (int i = 0; i < 3; ++i) {
+        {
+            std::lock_guard<std::mutex> lock(mtx);
+            tasks.push(i);
+        }
+        cv.notify_one();
+        std::this_thread::sleep_for(40ms);
+        REQUIRE(tm.isAlive() == true);
+    }
+
+    stop = true;
+    cv.notify_one();
+    worker.join();
+}
+
+TEST_CASE("ThreadMonitor state: STUCK", "[threadMonitor][states]") {
+    ThreadMonitor tm(100ms, "StuckThread");
+    std::mutex mtx;
+    std::atomic<bool> thread_started{false};
+
+    std::unique_lock<std::mutex> main_lock(mtx);
+
+    std::thread t([&]() {
+        tm.updateHeartbeat();
+        thread_started = true;
+        std::lock_guard<std::mutex> lock(mtx);
+        tm.updateHeartbeat();
+    });
+
+    while(!thread_started) { std::this_thread::yield(); }
+
+    std::this_thread::sleep_for(150ms);
+    
+    REQUIRE(tm.isAlive() == false);
+
+    main_lock.unlock();
+    t.join();
+}
+
+TEST_CASE("ThreadMonitor state: DEAD", "[threadMonitor][states]") {
+    ThreadMonitor tm(100ms, "DeadThread");
+    
+    std::thread t([&]() {
+        tm.updateHeartbeat();
+        std::this_thread::sleep_for(20ms);
+    });
+
+    t.join(); 
+    
+    REQUIRE(tm.isAlive() == false); 
+}
+
+TEST_CASE("ThreadMonitor state: ZOMBIE", "[threadMonitor][states]") {
+    ThreadMonitor tm(100ms, "ZombieThread");
+    
+    std::thread t([&]() {
+        tm.updateHeartbeat();
+        std::this_thread::sleep_for(20ms);
+    });
+
+    std::this_thread::sleep_for(50ms);
+    
+    t.detach();
+    REQUIRE(tm.isAlive() == false); 
 }

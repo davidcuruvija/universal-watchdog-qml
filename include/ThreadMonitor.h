@@ -4,6 +4,8 @@
 #include <string>
 #include <chrono>
 #include <mutex>
+#include <optional>
+#include <sys/types.h>
 
 /**
  * @brief Monitors a thread's liveness via a periodic heartbeat mechanism.
@@ -59,5 +61,6 @@ private:
     const std::chrono::milliseconds m_timeout;
     const std::string m_threadName;
     std::chrono::steady_clock::time_point m_lastHeartbeat;
+    std::optional<pid_t> m_nativeTid;
     mutable std::mutex m_mutex;
 };

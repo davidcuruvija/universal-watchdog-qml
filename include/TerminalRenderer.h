@@ -12,7 +12,7 @@ public:
     void printBanner() const;
     void printPrompt() const;
     void printHelp() const;
-    void printWatchHeader(const std::string& timeStr) const;
+    void printWatchHeader(const std::string& timeStr, bool isLive = true) const;
     void printList(const std::vector<std::pair<std::string, bool>>& entries, const std::set<std::string>& changedEntities = {}) const;
     void printSuccess(const std::string& msg) const;
     void printWarning(const std::string& msg) const;

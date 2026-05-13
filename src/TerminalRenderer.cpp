@@ -10,6 +10,7 @@ constexpr const char *RED = "\033[31m";
 constexpr const char *GREEN = "\033[32m";
 constexpr const char *YELLOW = "\033[33m";
 constexpr const char *CYAN = "\033[36m";
+constexpr const char *MAGENTA = "\033[35m";
 } // namespace Color
 
 void TerminalRenderer::printBanner() const {
@@ -49,10 +50,16 @@ void TerminalRenderer::printHelp() const {
       << "  └─────────────────────┴───────────────────────────────────┘\n\n";
 }
 
-void TerminalRenderer::printWatchHeader(const std::string& timeStr) const {
-    std::cout << "\n  " << Color::CYAN << "● LIVE VIEW" << Color::RESET 
-              << "   " << Color::DIM << "Last update: " << timeStr << Color::RESET << "\n"
-              << "  " << Color::DIM << "Press ENTER to return to command input" << Color::RESET << "\n";
+void TerminalRenderer::printWatchHeader(const std::string& timeStr, bool isLive) const {
+    if (isLive) {
+        std::cout << "\n  " << Color::CYAN << "● LIVE VIEW" << Color::RESET 
+                  << "   " << Color::DIM << "Last update: " << timeStr << Color::RESET << "\n"
+                  << "  " << Color::DIM << "Press ENTER to return to command input" << Color::RESET << "\n";
+    } else {
+        std::cout << "\n  " << Color::MAGENTA << "⏸️ SNAPSHOT" << Color::RESET 
+                  << "   " << Color::DIM << "Time: " << timeStr << Color::RESET << "\n"
+                  << "  " << Color::DIM << "(Historical state prior to change)" << Color::RESET << "\n";
+    }
 }
 
 void TerminalRenderer::printList(

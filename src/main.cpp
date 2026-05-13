@@ -120,6 +120,8 @@ int main(int argc, char* argv[]) {
                 break;
             case ParsedCommand::Type::WATCH: {
                 std::map<std::string, bool> previousState;
+                std::vector<std::pair<std::string, bool>> lastSnapshot;
+                std::string lastTimeStr;
                 bool firstIteration = true;
                 int lastLiveLines = 0;
 
@@ -147,15 +149,22 @@ int main(int argc, char* argv[]) {
                     bool hasChanges = !changedEntities.empty();
 
                     if (hasChanges) {
-                        // State change: old live table stays frozen as "last tick before change"
-                        // Print a new frozen snapshot WITH change indicators below it
+                        // We have changes! First, rewrite the old Live View as a frozen Snapshot
+                        if (lastLiveLines > 0) {
+                            renderer.moveCursorUp(lastLiveLines);
+                            renderer.clearFromCursor();
+                            renderer.printWatchHeader(lastTimeStr, false);
+                            renderer.printList(lastSnapshot);
+                        }
+
+                        // Now print the new state WITH change indicators as a second frozen Snapshot
                         auto now = std::chrono::system_clock::now();
                         std::time_t t = std::chrono::system_clock::to_time_t(now);
                         std::tm tm{};
                         localtime_r(&t, &tm);
                         char buf[30];
                         std::strftime(buf, sizeof(buf), "%H:%M:%S", &tm);
-                        renderer.printWatchHeader(buf);
+                        renderer.printWatchHeader(buf, false);
                         renderer.printList(currentSnapshot, changedEntities);
                         std::cout << std::flush;
                     } else if (!firstIteration) {
@@ -194,6 +203,8 @@ int main(int argc, char* argv[]) {
                     // printWatchHeader = 3 lines (\n + LIVE VIEW line + Press ENTER line)
                     // printList = 7 + N lines (\n + top + header + sep + N entries + bottom + summary + \n)
                     lastLiveLines = 10 + (int)currentSnapshot.size();
+                    lastSnapshot = currentSnapshot;
+                    lastTimeStr = buf;
 
                     firstIteration = false;
 

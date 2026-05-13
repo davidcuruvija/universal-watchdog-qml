@@ -97,6 +97,13 @@ public:
      */
     std::size_t count() const;
 
+    /**
+     * @brief Returns a snapshot of all monitored entities with their current status.
+     * Thread-safe. Takes the lock, copies data, and returns.
+     * @return Vector of (name, isAlive) pairs.
+     */
+    std::vector<std::pair<std::string, bool>> getStatusSnapshot() const;
+
 private:
     
     void monitorLoop();

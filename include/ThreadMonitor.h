@@ -19,6 +19,11 @@ public:
      * @brief Constructs a ThreadMonitor using project-wide config.
      * @param config Project configuration. Uses config.heartbeatTimeout.
      * @param threadName Human-readable name identifying the monitored thread.
+     * 
+     * @note The caller is responsible for ensuring threadName is unique
+     *       within a single Watchdog instance. See the other constructor
+     *       for naming guidance.
+     * 
      */
     ThreadMonitor(const Config& config, std::string threadName);
 
@@ -26,6 +31,17 @@ public:
      * @brief Constructs a ThreadMonitor.
      * @param timeout Maximum allowed time between heartbeats.
      * @param threadName Human-readable name identifying the monitored thread.
+     * 
+     * @note The caller is responsible for ensuring threadName is unique
+     *       within a single Watchdog instance. Watchdog uses the name to
+     *       track per-watchable state and identify entries in
+     *       unregisterByName(). Duplicate names cause cache collisions
+     *       and ambiguous removal.
+     *
+     *       Suggested naming patterns:
+     *         - Role + instance index: "worker-1", "worker-2"
+     *         - Role + counter: "worker#0", "worker#1"
+     *         - Role + purpose: "db-reader", "db-writer"
      */
     ThreadMonitor(std::chrono::milliseconds timeout, std::string threadName);
 

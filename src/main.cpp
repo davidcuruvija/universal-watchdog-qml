@@ -11,6 +11,7 @@
 #include "../include/logger.h"
 #include "../include/ProcessMonitor.h"
 #include "../include/ThreadMonitor.h"
+#include "../include/Config.h"
 
 namespace {
 
@@ -43,9 +44,10 @@ int main(int argc, char* argv[]) {
     std::signal(SIGINT, handleSignal);
     std::signal(SIGTERM, handleSignal);
 
-    Logger logger("watchdog.log");
+    Config config;
+    Logger logger(config.logFile);
 
-    Watchdog watchdog(logger);
+    Watchdog watchdog(logger, config);
 
     std::cout << "Watchdog starting. Monitoring PIDs:";
 
@@ -65,7 +67,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Press Ctrl+C to stop.\n\n";
 
     // Start monitoring with a 1-second interval
-    watchdog.start(1000);
+    watchdog.start();
 
     // Idle main thread until shutdown is requested
     while (!g_shutdownRequested.load()) {

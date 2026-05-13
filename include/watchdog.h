@@ -6,6 +6,8 @@
 #include <thread>
 #include <condition_variable>
 #include <vector>
+#include <chrono>
+#include <unordered_map>
 
 #include "watchable.h"
 #include "logger.h"
@@ -16,9 +18,12 @@
  * @brief Periodically monitors registered Watchable objects and reports their status.
  *
  * The Watchdog runs a background thread that iterates over all registered
- * Watchable objects at a fixed interval, querying their `isAlive()` state and
- * logging the result. It does not take any corrective action when an object is
- * reported as dead — it only detects and reports.
+ * Watchable objects at the configured poll interval. To keep the log
+ * informative without spamming, status is reported in two cases:
+ *
+ *   1. When an object's alive state changes from the previous check.
+ *   2. Periodically (every Config::summaryInterval), a full summary of
+ *      all monitored objects is logged regardless of state.
  *
  * The class is non-copyable and non-movable because it owns a background thread.
  *
@@ -27,9 +32,12 @@
 class Watchdog{
 public:
     /**
-     * @brief Constructs a Watchdog that logs status updates via the given logger.
+     * @brief Construct a Watchdog with the given logger and configuration.
+     * @param logger Reference to a Logger instance. Must outlive the Watchdog.
+     * @param config Configuration values for intervals. Defaults are used
+     *               if not specified.
      */
-    explicit Watchdog(Logger& logger);
+    explicit Watchdog(Logger& logger, Config config = Config{});
 
     /**
      * @brief Destructor. Ensures the monitoring thread is stopped cleanly.
@@ -51,21 +59,22 @@ public:
     void registerWatchable(std::shared_ptr<Watchable> w);
 
     /**
-     * @brief Starts the monitoring loop using project-wide config.
-     * @param config Project configuration. Uses config.pollInterval.
+     * @brief Remove a registered Watchable by its reported name.
+     *
+     * Thread-safe. If multiple watchables share the same name, only the
+     * first one found is removed.
+     *
+     * @return true if a matching object was found and removed; false otherwise.
      */
-    void start(const Config& config);
+    bool unregisterByName(const std::string& name);
+
+
 
     /**
-     * @brief Starts the monitoring loop in a background thread.
-     *
-     * Each iteration queries all registered Watchable objects and logs their
-     * status. The loop sleeps for `interval_ms` milliseconds between iterations.
-     *
-     * Calling start() while already running is a no-op.
+     * @brief Starts the monitoring loop in a background thread using the configured poll interval.
      *
      */
-    void start(int interval_ms);
+    void start();
 
     /**
      * @brief Signals the monitoring thread to stop and joins it.
@@ -89,14 +98,16 @@ public:
     std::size_t count() const;
 
 private:
-    /**
-     * @brief The body of the monitoring thread.
-     * @param interval_ms Sleep duration between iterations.
-     */
-    void monitorLoop(int interval_ms);
+    
+    void monitorLoop();
+    void checkAndLog();
 
     Logger& m_logger;
+    Config m_config;
     std::vector<std::shared_ptr<Watchable>> m_watchables;
+    std::unordered_map<std::string, bool> m_lastStatus;
+    std::chrono::steady_clock::time_point m_lastSummary;
+
     mutable std::mutex m_mutex;
     std::atomic<bool> m_running;
     std::thread m_monitorThread;

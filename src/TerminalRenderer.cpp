@@ -122,3 +122,9 @@ void TerminalRenderer::printConfig(const std::string &logFile, int heartbeatMs,
 void TerminalRenderer::clearAll() const { std::cout << "\033[2J\033[3J\033[H"; }
 
 void TerminalRenderer::clearVisible() const { std::cout << "\033[2J\033[H"; }
+
+void TerminalRenderer::moveCursorUp(int lines) const {
+    std::cout << "\033[" << lines << "A\r" << std::flush;
+}
+
+void TerminalRenderer::clearFromCursor() const { std::cout << "\033[J" << std::flush; }

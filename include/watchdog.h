@@ -55,8 +55,9 @@ public:
      *
      * Thread-safe — can be called while the monitoring loop is running.
      *
+     * @return true if registered successfully, false if a duplicate name exists.
      */
-    void registerWatchable(std::shared_ptr<Watchable> w);
+    bool registerWatchable(std::shared_ptr<Watchable> w);
 
     /**
      * @brief Remove a registered Watchable by its reported name.

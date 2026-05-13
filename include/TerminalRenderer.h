@@ -22,4 +22,6 @@ public:
                      int heartbeatMs, int pollMs, int summaryMs) const;
     void clearAll() const;
     void clearVisible() const;
+    void moveCursorUp(int lines) const;
+    void clearFromCursor() const;
 };

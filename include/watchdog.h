@@ -55,8 +55,9 @@ public:
      *
      * Thread-safe — can be called while the monitoring loop is running.
      *
+     * @return true if registered successfully, false if a duplicate name exists.
      */
-    void registerWatchable(std::shared_ptr<Watchable> w);
+    bool registerWatchable(std::shared_ptr<Watchable> w);
 
     /**
      * @brief Remove a registered Watchable by its reported name.
@@ -96,6 +97,13 @@ public:
      * @return Count of registered objects.
      */
     std::size_t count() const;
+
+    /**
+     * @brief Returns a snapshot of all monitored entities with their current status.
+     * Thread-safe. Takes the lock, copies data, and returns.
+     * @return Vector of (name, isAlive) pairs.
+     */
+    std::vector<std::pair<std::string, bool>> getStatusSnapshot() const;
 
 private:
     

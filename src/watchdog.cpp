@@ -15,9 +15,18 @@ Watchdog::~Watchdog() {
     stop();  // Safety: ensure thread doesn't outlive the object
 }
 
-void Watchdog::registerWatchable(std::shared_ptr<Watchable> w) {
+bool Watchdog::registerWatchable(std::shared_ptr<Watchable> w) {
     std::lock_guard<std::mutex> lock(m_mutex);
+    
+    // Check for duplicates by name
+    for (const auto& existing : m_watchables) {
+        if (existing->name() == w->name()) {
+            return false; // Already registered
+        }
+    }
+    
     m_watchables.push_back(std::move(w));
+    return true;
 }
 
 bool Watchdog::unregisterByName(const std::string& name) {
@@ -74,6 +83,16 @@ bool Watchdog::isRunning() const {
 std::size_t Watchdog::count() const {
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_watchables.size();
+}
+
+std::vector<std::pair<std::string, bool>> Watchdog::getStatusSnapshot() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    std::vector<std::pair<std::string, bool>> result;
+    result.reserve(m_watchables.size());
+    for (const auto& w : m_watchables) {
+        result.emplace_back(w->name(), w->isAlive());
+    }
+    return result;
 }
 
 

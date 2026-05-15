@@ -10,6 +10,7 @@
 #include <unordered_map>
 
 #include "watchable.h"
+#include "Manageable.h"
 #include "logger.h"
 #include "Config.h"
 
@@ -104,6 +105,21 @@ public:
      * @return Vector of (name, isAlive) pairs.
      */
     std::vector<std::pair<std::string, bool>> getStatusSnapshot() const;
+
+    /**
+     * @brief Send SIGTERM to a monitored process by its display name.
+     *
+     * Thread-safe. Returns false if no matching Manageable is found.
+     */
+    bool killByName(const std::string& name);
+
+    /**
+     * @brief Kill and relaunch a monitored process by its display name.
+     *
+     * Thread-safe. After a successful restart the tracked PID is updated.
+     * Returns false if no matching Manageable is found or restart fails.
+     */
+    bool restartByName(const std::string& name);
 
 private:
     

@@ -115,6 +115,25 @@ int main(int argc, char* argv[]) {
                 }
                 break;
             }
+            case ParsedCommand::Type::KILL: {
+                std::string name = cmd.args[0];
+                if (watchdog.killByName(name)) {
+                    renderer.printSuccess("SIGTERM sent to: " + name);
+                } else {
+                    renderer.printWarning("Not found or not killable: " + name);
+                }
+                break;
+            }
+            case ParsedCommand::Type::RESTART: {
+                std::string name = cmd.args[0];
+                renderer.printInfo("Restarting: " + name + " ...");
+                if (watchdog.restartByName(name)) {
+                    renderer.printSuccess("Restarted: " + name);
+                } else {
+                    renderer.printWarning("Not found, not restartable, or restart failed: " + name);
+                }
+                break;
+            }
             case ParsedCommand::Type::LIST:
                 renderer.printList(watchdog.getStatusSnapshot());
                 break;

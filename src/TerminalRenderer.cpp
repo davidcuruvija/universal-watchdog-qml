@@ -35,6 +35,10 @@ void TerminalRenderer::printHelp() const {
       << "   │ Start monitoring a named thread   │\n"
       << "  │ " << Color::CYAN << "remove <name>" << Color::RESET
       << "       │ Stop monitoring by name           │\n"
+      << "  │ " << Color::CYAN << "kill <name>" << Color::RESET
+      << "         │ Send SIGTERM to a monitored process│\n"
+      << "  │ " << Color::CYAN << "restart <name>" << Color::RESET
+      << "      │ Kill and relaunch a process       │\n"
       << "  │ " << Color::CYAN << "list" << Color::RESET
       << "                │ Show all monitored entities       │\n"
       << "  │ " << Color::CYAN << "watch" << Color::RESET

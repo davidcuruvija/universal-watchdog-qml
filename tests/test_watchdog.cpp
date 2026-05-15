@@ -186,24 +186,19 @@ TEST_CASE("unregisterByName returns false for unknown name",
     REQUIRE(wd.count() == 1);
 }
 
-TEST_CASE("unregisterByName removes only the first match when duplicates exist",
-          "[watchdog][unregister][edge]") {
+TEST_CASE("registerWatchable rejects duplicate names",
+          "[watchdog][register][edge]") {
     std::ostringstream oss;
     Logger logger(oss);
     Watchdog wd(logger, testConfig());
 
-    wd.registerWatchable(std::make_shared<FakeWatchable>("worker", true));
-    wd.registerWatchable(std::make_shared<FakeWatchable>("worker", false));
-    REQUIRE(wd.count() == 2);
-
-    const bool removed = wd.unregisterByName("worker");
-
-    REQUIRE(removed);
+    REQUIRE(wd.registerWatchable(std::make_shared<FakeWatchable>("worker", true)));
+    REQUIRE_FALSE(wd.registerWatchable(std::make_shared<FakeWatchable>("worker", false)));
     REQUIRE(wd.count() == 1);
 
-    // Second call should also succeed (the duplicate is still there)
     REQUIRE(wd.unregisterByName("worker"));
     REQUIRE(wd.count() == 0);
+    REQUIRE_FALSE(wd.unregisterByName("worker"));
 }
 
 TEST_CASE("unregisterByName works while the monitor loop is running",

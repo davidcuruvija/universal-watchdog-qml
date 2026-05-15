@@ -107,6 +107,32 @@ void Watchdog::monitorLoop() {
     }
 }
 
+bool Watchdog::killByName(const std::string& name) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    for (const auto& w : m_watchables) {
+        if (w->name() == name) {
+            auto mgr = std::dynamic_pointer_cast<Manageable>(w);
+            return mgr && mgr->kill();
+        }
+    }
+    return false;
+}
+
+bool Watchdog::restartByName(const std::string& name) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    for (const auto& w : m_watchables) {
+        if (w->name() == name) {
+            auto mgr = std::dynamic_pointer_cast<Manageable>(w);
+            if (!mgr) return false;
+            std::string oldName = w->name();
+            bool ok = mgr->restart();
+            if (ok) m_lastStatus.erase(oldName);
+            return ok;
+        }
+    }
+    return false;
+}
+
 void Watchdog::checkAndLog() {
     std::lock_guard<std::mutex> lock(m_mutex);
 

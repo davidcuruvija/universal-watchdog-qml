@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
 
     // Print initial list if any were passed via CLI
     if (watchdog.count() > 0) {
-        renderer.printList(watchdog.getStatusSnapshot());
+        renderer.printList(watchdog.getDetailedSnapshot());
     }
 
     std::string line;
@@ -116,11 +116,11 @@ int main(int argc, char* argv[]) {
                 break;
             }
             case ParsedCommand::Type::LIST:
-                renderer.printList(watchdog.getStatusSnapshot());
+                renderer.printList(watchdog.getDetailedSnapshot());
                 break;
             case ParsedCommand::Type::WATCH: {
-                std::map<std::string, bool> previousState;
-                std::vector<std::pair<std::string, bool>> lastSnapshot;
+                std::map<std::string, std::string> previousState;
+                std::vector<std::pair<std::string, std::string>> lastSnapshot;
                 std::string lastTimeStr;
                 bool firstIteration = true;
                 int lastLiveLines = 0;
@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
                 renderer.clearVisible();
 
                 while (!g_shutdownRequested.load()) {
-                    auto currentSnapshot = watchdog.getStatusSnapshot();
+                    auto currentSnapshot = watchdog.getDetailedSnapshot();
                     std::set<std::string> changedEntities;
                     
                     if (!firstIteration) {

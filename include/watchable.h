@@ -20,4 +20,15 @@ public:
      * @brief Returns the human-readable name of the monitored object.
      */
     virtual std::string name() const = 0;
+
+    /**
+     * @brief Returns resident memory usage in kilobytes, or 0 if not applicable.
+     */
+    virtual long memoryKB() const { return 0; }
+};
+
+struct WatchableStatus {
+    std::string name;
+    bool alive;
+    long memoryKB;
 };

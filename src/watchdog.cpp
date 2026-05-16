@@ -85,13 +85,16 @@ std::size_t Watchdog::count() const {
     return m_watchables.size();
 }
 
-std::vector<std::pair<std::string, bool>> Watchdog::getStatusSnapshot() const {
+std::vector<WatchableStatus> Watchdog::getStatusSnapshot() const {
     std::lock_guard<std::mutex> lock(m_mutex);
-    std::vector<std::pair<std::string, bool>> result;
+    std::vector<WatchableStatus> result;
     result.reserve(m_watchables.size());
     for (const auto& w : m_watchables) {
-        result.emplace_back(w->name(), w->isAlive());
+        result.push_back({w->name(), w->isAlive(), w->memoryKB()});
     }
+    std::sort(result.begin(), result.end(), [](const WatchableStatus& a, const WatchableStatus& b) {
+        return a.memoryKB > b.memoryKB;
+    });
     return result;
 }
 

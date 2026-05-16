@@ -1,6 +1,7 @@
 #include "../include/TerminalRenderer.h"
 #include <iomanip>
 #include <iostream>
+#include <sstream>
 
 namespace Color {
 constexpr const char *RESET = "\033[0m";
@@ -66,37 +67,53 @@ void TerminalRenderer::printWatchHeader(const std::string& timeStr, bool isLive)
     }
 }
 
+static std::string formatMemory(long kb) {
+  if (kb <= 0) return "N/A";
+  if (kb < 1024) return std::to_string(kb) + " KB";
+  double mb = kb / 1024.0;
+  if (mb < 1024.0) {
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(1) << mb << " MB";
+    return oss.str();
+  }
+  std::ostringstream oss;
+  oss << std::fixed << std::setprecision(2) << (mb / 1024.0) << " GB";
+  return oss.str();
+}
+
 void TerminalRenderer::printList(
-    const std::vector<std::pair<std::string, bool>> &entries,
+    const std::vector<WatchableStatus> &entries,
     const std::set<std::string>& changedEntities) const {
-  std::cout << "\n  ┌────┬────────────────────────────┬──────────┐\n"
-            << "  │  # │ Name                       │  Status  │\n"
-            << "  ├────┼────────────────────────────┼──────────┤\n";
+  std::cout << "\n  ┌────┬────────────────────────────┬──────────┬───────────┐\n"
+            << "  │  # │ Name                       │  Status  │   Memory  │\n"
+            << "  ├────┼────────────────────────────┼──────────┼───────────┤\n";
 
   int aliveCount = 0;
   int index = 1;
   for (const auto &entry : entries) {
-    std::string name = entry.first;
+    std::string name = entry.name;
     if (name.length() > 26) {
       name = name.substr(0, 23) + "...";
     }
 
     std::cout << "  │ " << std::setw(2) << index++ << " │ " << std::left
               << std::setw(26) << name << std::right << " │ ";
-    
-    if (entry.second) {
+
+    if (entry.alive) {
       std::cout << Color::GREEN << "● ALIVE " << Color::RESET << " │";
       aliveCount++;
     } else {
       std::cout << Color::RED << "○ DEAD  " << Color::RESET << " │";
     }
 
-    if (changedEntities.count(entry.first) > 0) {
+    std::cout << std::right << std::setw(9) << formatMemory(entry.memoryKB) << "  │";
+
+    if (changedEntities.count(entry.name) > 0) {
       std::cout << "  " << Color::YELLOW << "⚡ STATE CHANGED" << Color::RESET;
     }
     std::cout << "\n";
   }
-  std::cout << "  └────┴────────────────────────────┴──────────┘\n";
+  std::cout << "  └────┴────────────────────────────┴──────────┴───────────┘\n";
   std::cout << "  Monitoring " << entries.size() << " entities (" << aliveCount
             << " alive, " << entries.size() - aliveCount << " dead)\n\n";
 }

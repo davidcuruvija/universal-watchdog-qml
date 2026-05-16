@@ -3,6 +3,7 @@
 #include <cerrno>
 #include <csignal>
 #include <fstream>
+#include <sstream>
 #include <string>
 #include <stdexcept>
 #include <unistd.h>
@@ -90,6 +91,21 @@ bool ProcessMonitor::isAlive() const {
   }
 
   return false;
+}
+
+long ProcessMonitor::memoryKB() const {
+  std::string path = "/proc/" + std::to_string(m_pid) + "/status";
+  std::ifstream file(path);
+  std::string line;
+  while (std::getline(file, line)) {
+    if (line.compare(0, 6, "VmRSS:") == 0) {
+      long kb = 0;
+      std::istringstream iss(line.substr(6));
+      iss >> kb;
+      return kb;
+    }
+  }
+  return 0;
 }
 
 bool ProcessMonitor::kill() {

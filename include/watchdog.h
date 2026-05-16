@@ -102,9 +102,10 @@ public:
     /**
      * @brief Returns a snapshot of all monitored entities with their current status.
      * Thread-safe. Takes the lock, copies data, and returns.
-     * @return Vector of (name, isAlive) pairs.
+     * Results are sorted by memory usage descending (processes with most memory first).
+     * @return Vector of WatchableStatus structs.
      */
-    std::vector<std::pair<std::string, bool>> getStatusSnapshot() const;
+    std::vector<WatchableStatus> getStatusSnapshot() const;
 
     /**
      * @brief Send SIGTERM to a monitored process by its display name.

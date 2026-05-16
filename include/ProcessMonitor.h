@@ -61,4 +61,10 @@ public:
   bool restart() override;
 
   pid_t pid() const { return m_pid; }
+
+  /**
+   * @brief Returns the resident set size (VmRSS) in kilobytes from /proc.
+   * Returns 0 if the process is not alive or the value cannot be read.
+   */
+  long memoryKB() const override;
 };

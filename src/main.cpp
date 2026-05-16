@@ -139,7 +139,7 @@ int main(int argc, char* argv[]) {
                 break;
             case ParsedCommand::Type::WATCH: {
                 std::map<std::string, bool> previousState;
-                std::vector<std::pair<std::string, bool>> lastSnapshot;
+                std::vector<WatchableStatus> lastSnapshot;
                 std::string lastTimeStr;
                 bool firstIteration = true;
                 int lastLiveLines = 0;
@@ -150,19 +150,19 @@ int main(int argc, char* argv[]) {
                 while (!g_shutdownRequested.load()) {
                     auto currentSnapshot = watchdog.getStatusSnapshot();
                     std::set<std::string> changedEntities;
-                    
+
                     if (!firstIteration) {
                         for (const auto& entry : currentSnapshot) {
-                            auto it = previousState.find(entry.first);
-                            if (it != previousState.end() && it->second != entry.second) {
-                                changedEntities.insert(entry.first);
+                            auto it = previousState.find(entry.name);
+                            if (it != previousState.end() && it->second != entry.alive) {
+                                changedEntities.insert(entry.name);
                             }
                         }
                     }
-                    
+
                     previousState.clear();
                     for (const auto& entry : currentSnapshot) {
-                        previousState[entry.first] = entry.second;
+                        previousState[entry.name] = entry.alive;
                     }
 
                     bool hasChanges = !changedEntities.empty();

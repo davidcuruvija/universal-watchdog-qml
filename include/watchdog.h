@@ -30,6 +30,8 @@
  *
  */
 
+enum class SortMode { MEMORY, CPU, NAME };
+
 class Watchdog{
 public:
     /**
@@ -102,10 +104,16 @@ public:
     /**
      * @brief Returns a snapshot of all monitored entities with their current status.
      * Thread-safe. Takes the lock, copies data, and returns.
-     * Results are sorted by memory usage descending (processes with most memory first).
+     * Results are sorted according to the current SortMode (default: MEMORY descending).
      * @return Vector of WatchableStatus structs.
      */
     std::vector<WatchableStatus> getStatusSnapshot() const;
+
+    /**
+     * @brief Sets the field used to sort the status snapshot.
+     * Thread-safe.
+     */
+    void setSortMode(SortMode mode);
 
     /**
      * @brief Send SIGTERM to a monitored process by its display name.
@@ -129,6 +137,7 @@ private:
 
     Logger& m_logger;
     Config m_config;
+    SortMode m_sortMode{SortMode::MEMORY};
     std::vector<std::shared_ptr<Watchable>> m_watchables;
     std::unordered_map<std::string, bool> m_lastStatus;
     std::chrono::steady_clock::time_point m_lastSummary;

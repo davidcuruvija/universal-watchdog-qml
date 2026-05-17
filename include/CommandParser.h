@@ -14,6 +14,7 @@ struct ParsedCommand {
         RESTART,        // restart <name>
         LIST,           // list
         WATCH,          // watch
+        SORT,           // sort cpu|memory|name
         CONFIG,         // config
         CLEAR,          // clear
         HELP,           // help

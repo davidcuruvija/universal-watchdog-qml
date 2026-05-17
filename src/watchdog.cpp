@@ -90,12 +90,32 @@ std::vector<WatchableStatus> Watchdog::getStatusSnapshot() const {
     std::vector<WatchableStatus> result;
     result.reserve(m_watchables.size());
     for (const auto& w : m_watchables) {
-        result.push_back({w->name(), w->isAlive(), w->memoryKB()});
+        result.push_back({w->name(), w->isAlive(), w->memoryKB(), w->cpuPercent()});
     }
-    std::sort(result.begin(), result.end(), [](const WatchableStatus& a, const WatchableStatus& b) {
-        return a.memoryKB > b.memoryKB;
-    });
+    switch (m_sortMode) {
+        case SortMode::CPU:
+            std::sort(result.begin(), result.end(), [](const WatchableStatus& a, const WatchableStatus& b) {
+                return a.cpuPercent > b.cpuPercent;
+            });
+            break;
+        case SortMode::NAME:
+            std::sort(result.begin(), result.end(), [](const WatchableStatus& a, const WatchableStatus& b) {
+                return a.name < b.name;
+            });
+            break;
+        case SortMode::MEMORY:
+        default:
+            std::sort(result.begin(), result.end(), [](const WatchableStatus& a, const WatchableStatus& b) {
+                return a.memoryKB > b.memoryKB;
+            });
+            break;
+    }
     return result;
+}
+
+void Watchdog::setSortMode(SortMode mode) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_sortMode = mode;
 }
 
 

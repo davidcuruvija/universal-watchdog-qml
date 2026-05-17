@@ -137,6 +137,15 @@ int main(int argc, char* argv[]) {
             case ParsedCommand::Type::LIST:
                 renderer.printList(watchdog.getStatusSnapshot());
                 break;
+            case ParsedCommand::Type::SORT: {
+                const std::string& field = cmd.args[0];
+                SortMode mode = SortMode::MEMORY;
+                if (field == "cpu")    mode = SortMode::CPU;
+                else if (field == "name") mode = SortMode::NAME;
+                watchdog.setSortMode(mode);
+                renderer.printSuccess("Sort order set to: " + field);
+                break;
+            }
             case ParsedCommand::Type::WATCH: {
                 std::map<std::string, bool> previousState;
                 std::vector<WatchableStatus> lastSnapshot;

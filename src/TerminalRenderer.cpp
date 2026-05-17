@@ -29,30 +29,32 @@ void TerminalRenderer::printPrompt() const {
 void TerminalRenderer::printHelp() const {
   std::cout
       << "\n  Available commands:\n"
-      << "  ┌─────────────────────┬───────────────────────────────────┐\n"
+      << "  ┌──────────────────────────┬───────────────────────────────────┐\n"
       << "  │ " << Color::CYAN << "add process <pid>" << Color::RESET
-      << "   │ Start monitoring a process by PID │\n"
+      << "        │ Start monitoring a process by PID │\n"
       << "  │ " << Color::CYAN << "add thread <name>" << Color::RESET
-      << "   │ Start monitoring a named thread   │\n"
+      << "        │ Start monitoring a named thread   │\n"
       << "  │ " << Color::CYAN << "remove <name>" << Color::RESET
-      << "       │ Stop monitoring by name           │\n"
+      << "            │ Stop monitoring by name           │\n"
       << "  │ " << Color::CYAN << "kill <name>" << Color::RESET
-      << "         │ Send SIGTERM to a monitored process│\n"
+      << "              │ Send SIGTERM to a monitored process│\n"
       << "  │ " << Color::CYAN << "restart <name>" << Color::RESET
-      << "      │ Kill and relaunch a process       │\n"
+      << "           │ Kill and relaunch a process       │\n"
       << "  │ " << Color::CYAN << "list" << Color::RESET
-      << "                │ Show all monitored entities       │\n"
+      << "                     │ Show all monitored entities       │\n"
       << "  │ " << Color::CYAN << "watch" << Color::RESET
-      << "               │ Live auto-updating status view    │\n"
+      << "                    │ Live auto-updating status view    │\n"
+      << "  │ " << Color::CYAN << "sort cpu|memory|name" << Color::RESET
+      << "     │ Set sort order for list/watch     │\n"
       << "  │ " << Color::CYAN << "config" << Color::RESET
-      << "              │ Show current configuration        │\n"
+      << "                   │ Show current configuration        │\n"
       << "  │ " << Color::CYAN << "clear" << Color::RESET
-      << "               │ Clear terminal screen             │\n"
+      << "                    │ Clear terminal screen             │\n"
       << "  │ " << Color::CYAN << "help" << Color::RESET
-      << "                │ Show this help message            │\n"
+      << "                     │ Show this help message            │\n"
       << "  │ " << Color::CYAN << "quit / exit" << Color::RESET
-      << "         │ Gracefully shutdown watchdog      │\n"
-      << "  └─────────────────────┴───────────────────────────────────┘\n\n";
+      << "              │ Gracefully shutdown watchdog      │\n"
+      << "  └──────────────────────────┴───────────────────────────────────┘\n\n";
 }
 
 void TerminalRenderer::printWatchHeader(const std::string& timeStr, bool isLive) const {
@@ -81,12 +83,19 @@ static std::string formatMemory(long kb) {
   return oss.str();
 }
 
+static std::string formatCpu(double pct) {
+  if (pct <= 0.0) return "N/A";
+  std::ostringstream oss;
+  oss << std::fixed << std::setprecision(1) << pct << "%";
+  return oss.str();
+}
+
 void TerminalRenderer::printList(
     const std::vector<WatchableStatus> &entries,
     const std::set<std::string>& changedEntities) const {
-  std::cout << "\n  ┌────┬────────────────────────────┬──────────┬───────────┐\n"
-            << "  │  # │ Name                       │  Status  │   Memory  │\n"
-            << "  ├────┼────────────────────────────┼──────────┼───────────┤\n";
+  std::cout << "\n  ┌────┬────────────────────────────┬──────────┬───────────┬────────┐\n"
+            << "  │  # │ Name                       │  Status  │   Memory  │   CPU  │\n"
+            << "  ├────┼────────────────────────────┼──────────┼───────────┼────────┤\n";
 
   int aliveCount = 0;
   int index = 1;
@@ -107,13 +116,14 @@ void TerminalRenderer::printList(
     }
 
     std::cout << std::right << std::setw(9) << formatMemory(entry.memoryKB) << "  │";
+    std::cout << std::right << std::setw(6) << formatCpu(entry.cpuPercent) << "  │";
 
     if (changedEntities.count(entry.name) > 0) {
       std::cout << "  " << Color::YELLOW << "⚡ STATE CHANGED" << Color::RESET;
     }
     std::cout << "\n";
   }
-  std::cout << "  └────┴────────────────────────────┴──────────┴───────────┘\n";
+  std::cout << "  └────┴────────────────────────────┴──────────┴───────────┴────────┘\n";
   std::cout << "  Monitoring " << entries.size() << " entities (" << aliveCount
             << " alive, " << entries.size() - aliveCount << " dead)\n\n";
 }

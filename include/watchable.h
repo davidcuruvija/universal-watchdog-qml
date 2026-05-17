@@ -25,10 +25,19 @@ public:
      * @brief Returns resident memory usage in kilobytes, or 0 if not applicable.
      */
     virtual long memoryKB() const { return 0; }
+
+    /**
+     * @brief Returns CPU usage as a percentage (0–100+), or 0 if not applicable.
+     *
+     * Computed as a delta between successive calls; the first call always
+     * returns 0 and seeds the baseline for subsequent measurements.
+     */
+    virtual double cpuPercent() const { return 0.0; }
 };
 
 struct WatchableStatus {
     std::string name;
     bool alive;
     long memoryKB;
+    double cpuPercent;
 };

@@ -2,6 +2,7 @@
 
 #include "Manageable.h"
 
+#include <chrono>
 #include <string>
 #include <vector>
 #include <sys/types.h>
@@ -26,6 +27,10 @@ private:
   }
 
   static std::vector<std::string> readCmdline(pid_t pid);
+  static long readCpuTicks(pid_t pid);
+
+  mutable long m_prevCpuTicks{-1};
+  mutable std::chrono::steady_clock::time_point m_prevCpuTime;
 
 public:
   /**
@@ -67,4 +72,13 @@ public:
    * Returns 0 if the process is not alive or the value cannot be read.
    */
   long memoryKB() const override;
+
+  /**
+   * @brief Returns CPU usage percentage since the last call.
+   *
+   * Reads utime+stime from /proc/<pid>/stat and computes a percentage over
+   * the elapsed wall-clock time. The first call seeds the baseline and
+   * returns 0. Returns 0 if the process is unreachable.
+   */
+  double cpuPercent() const override;
 };

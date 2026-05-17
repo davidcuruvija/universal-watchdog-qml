@@ -1,6 +1,7 @@
 #include "ProcessMonitor.h"
 
 #include <cerrno>
+#include <chrono>
 #include <csignal>
 #include <fstream>
 #include <sstream>
@@ -91,6 +92,55 @@ bool ProcessMonitor::isAlive() const {
   }
 
   return false;
+}
+
+long ProcessMonitor::readCpuTicks(pid_t pid) {
+  std::string path = "/proc/" + std::to_string(pid) + "/stat";
+  std::ifstream f(path);
+  if (!f.is_open()) return -1;
+
+  std::string line;
+  if (!std::getline(f, line)) return -1;
+
+  // Skip past the comm field "(name)" which may contain spaces/parens.
+  size_t rpos = line.find_last_of(')');
+  if (rpos == std::string::npos || rpos + 2 >= line.size()) return -1;
+
+  // After ") " the fields are: state ppid pgroup session tty_nr tpgid flags
+  // minflt cminflt majflt cmajflt utime(11) stime(12)
+  std::istringstream iss(line.substr(rpos + 2));
+  std::string tok;
+  long utime = 0, stime = 0;
+  for (int i = 0; i <= 12; ++i) {
+    if (!(iss >> tok)) return -1;
+    if (i == 11) utime = std::stol(tok);
+    if (i == 12) stime = std::stol(tok);
+  }
+  return utime + stime;
+}
+
+double ProcessMonitor::cpuPercent() const {
+  long ticks = readCpuTicks(m_pid);
+  if (ticks < 0) return 0.0;
+
+  auto now = std::chrono::steady_clock::now();
+
+  if (m_prevCpuTicks < 0) {
+    m_prevCpuTicks = ticks;
+    m_prevCpuTime = now;
+    return 0.0;
+  }
+
+  double elapsed = std::chrono::duration<double>(now - m_prevCpuTime).count();
+  if (elapsed < 0.01) return 0.0;
+
+  long clkTck = sysconf(_SC_CLK_TCK);
+  double pct = 100.0 * static_cast<double>(ticks - m_prevCpuTicks) / (elapsed * clkTck);
+
+  m_prevCpuTicks = ticks;
+  m_prevCpuTime = now;
+
+  return (pct < 0.0) ? 0.0 : pct;
 }
 
 long ProcessMonitor::memoryKB() const {

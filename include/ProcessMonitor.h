@@ -3,6 +3,18 @@
 #include "watchable.h"
 
 #include <sys/types.h>
+#include <chrono>
+
+/**
+ * @brief Granular process states derived from /proc/<pid>/stat.
+ */
+enum class ProcessState {
+    ALIVE,    ///< R (Running) or S (Sleeping) — healthy
+    STOPPED,  ///< T — process frozen by signal or debugger
+    ZOMBIE,   ///< Z — terminated but not yet reaped
+    DEAD,     ///< /proc/<pid>/stat does not exist
+    STUCK     ///< D (Disk sleep) for longer than threshold
+};
 
 /**
  * @class ProcessMonitor
@@ -17,6 +29,15 @@ private:
   std::string m_processName;  ///< Raw process name 
   std::string m_name; ///< Name including PID (e.g. "firefox (pid=1234)")
   
+  // D-state tracking
+  mutable bool m_inDState = false;
+  mutable std::chrono::steady_clock::time_point m_dStateSince;
+
+  /**
+   * @brief Reads the raw state character from /proc/<pid>/stat.
+   * @return The state char ('R','S','D','T','Z') or '\0' if unreadable.
+   */
+  char readRawState() const;
 
   /**
    * @brief Returns the absolute filesystem path to the process's status file.
@@ -54,4 +75,12 @@ public:
    * (T) state.
    */
   bool isAlive() const override;
+
+  /**
+   * @brief Returns the granular process state.
+   *
+   * Uses the raw state character from /proc/<pid>/stat and applies
+   * D-state timeout logic to distinguish healthy disk-sleep from stuck.
+   */
+  ProcessState getProcessState() const;
 };

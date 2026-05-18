@@ -43,3 +43,43 @@ TEST_CASE("CommandParser: empty") {
     auto cmd = parser.parse("");
     REQUIRE(cmd.type == ParsedCommand::Type::UNKNOWN);
 }
+
+TEST_CASE("CommandParser: sort cpu", "[commandParser][sort]") {
+    CommandParser parser;
+    auto cmd = parser.parse("sort cpu");
+    REQUIRE(cmd.type == ParsedCommand::Type::SORT);
+    REQUIRE(cmd.args[0] == "cpu");
+}
+
+TEST_CASE("CommandParser: sort memory", "[commandParser][sort]") {
+    CommandParser parser;
+    auto cmd = parser.parse("sort memory");
+    REQUIRE(cmd.type == ParsedCommand::Type::SORT);
+    REQUIRE(cmd.args[0] == "memory");
+}
+
+TEST_CASE("CommandParser: sort name", "[commandParser][sort]") {
+    CommandParser parser;
+    auto cmd = parser.parse("sort name");
+    REQUIRE(cmd.type == ParsedCommand::Type::SORT);
+    REQUIRE(cmd.args[0] == "name");
+}
+
+TEST_CASE("CommandParser: sort case insensitive", "[commandParser][sort]") {
+    CommandParser parser;
+    REQUIRE(parser.parse("SORT CPU").type == ParsedCommand::Type::SORT);
+}
+
+TEST_CASE("CommandParser: sort without field is UNKNOWN", "[commandParser][sort]") {
+    CommandParser parser;
+    auto cmd = parser.parse("sort");
+    REQUIRE(cmd.type == ParsedCommand::Type::UNKNOWN);
+    REQUIRE_FALSE(cmd.errorMessage.empty());
+}
+
+TEST_CASE("CommandParser: sort with invalid field is UNKNOWN", "[commandParser][sort]") {
+    CommandParser parser;
+    auto cmd = parser.parse("sort invalid");
+    REQUIRE(cmd.type == ParsedCommand::Type::UNKNOWN);
+    REQUIRE_FALSE(cmd.errorMessage.empty());
+}

@@ -40,6 +40,20 @@ ParsedCommand CommandParser::parse(const std::string& input) const {
         cmd.type = ParsedCommand::Type::LIST;
     } else if (verb == "watch") {
         cmd.type = ParsedCommand::Type::WATCH;
+    } else if (verb == "sort") {
+        if (tokens.size() < 2) {
+            cmd.type = ParsedCommand::Type::UNKNOWN;
+            cmd.errorMessage = "Usage: sort cpu|memory|name";
+            return cmd;
+        }
+        std::string field = toLower(tokens[1]);
+        if (field != "cpu" && field != "memory" && field != "name") {
+            cmd.type = ParsedCommand::Type::UNKNOWN;
+            cmd.errorMessage = "Unknown sort field '" + field + "'. Use: cpu, memory, name";
+            return cmd;
+        }
+        cmd.type = ParsedCommand::Type::SORT;
+        cmd.args.push_back(field);
     } else if (verb == "config") {
         cmd.type = ParsedCommand::Type::CONFIG;
     } else if (verb == "clear") {
@@ -88,6 +102,26 @@ ParsedCommand CommandParser::parse(const std::string& input) const {
         for (size_t i = 2; i < tokens.size(); ++i) {
             name += " " + tokens[i];
         }
+        cmd.args.push_back(name);
+    } else if (verb == "kill") {
+        if (tokens.size() < 2) {
+            cmd.type = ParsedCommand::Type::UNKNOWN;
+            cmd.errorMessage = "Usage: kill <name>";
+            return cmd;
+        }
+        cmd.type = ParsedCommand::Type::KILL;
+        std::string name = tokens[1];
+        for (size_t i = 2; i < tokens.size(); ++i) name += " " + tokens[i];
+        cmd.args.push_back(name);
+    } else if (verb == "restart") {
+        if (tokens.size() < 2) {
+            cmd.type = ParsedCommand::Type::UNKNOWN;
+            cmd.errorMessage = "Usage: restart <name>";
+            return cmd;
+        }
+        cmd.type = ParsedCommand::Type::RESTART;
+        std::string name = tokens[1];
+        for (size_t i = 2; i < tokens.size(); ++i) name += " " + tokens[i];
         cmd.args.push_back(name);
     } else {
         cmd.type = ParsedCommand::Type::UNKNOWN;

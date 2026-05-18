@@ -195,6 +195,9 @@ TEST_CASE("registerWatchable rejects duplicates by name",
     REQUIRE(wd.registerWatchable(std::make_shared<FakeWatchable>("worker", true)));
     REQUIRE_FALSE(wd.registerWatchable(std::make_shared<FakeWatchable>("worker", false)));
     REQUIRE(wd.count() == 1);
+    REQUIRE(wd.unregisterByName("worker"));
+    REQUIRE(wd.count() == 0);
+    REQUIRE_FALSE(wd.unregisterByName("worker"));
 }
 
 TEST_CASE("unregisterByName works while the monitor loop is running",

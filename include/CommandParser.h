@@ -10,8 +10,11 @@ struct ParsedCommand {
         ADD_PROCESS,    // add process <pid>
         ADD_THREAD,     // add thread <name> [timeout_ms]
         REMOVE,         // remove <name>
+        KILL,           // kill <name>
+        RESTART,        // restart <name>
         LIST,           // list
         WATCH,          // watch
+        SORT,           // sort cpu|memory|name
         CONFIG,         // config
         CLEAR,          // clear
         HELP,           // help

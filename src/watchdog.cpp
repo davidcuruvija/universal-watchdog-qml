@@ -86,38 +86,85 @@ std::size_t Watchdog::count() const {
     return m_watchables.size();
 }
 
-std::vector<std::pair<std::string, bool>> Watchdog::getStatusSnapshot() const {
+std::vector<WatchableStatus> Watchdog::getStatusSnapshot() const {
     std::lock_guard<std::mutex> lock(m_mutex);
-    std::vector<std::pair<std::string, bool>> result;
+    std::vector<WatchableStatus> result;
     result.reserve(m_watchables.size());
     for (const auto& w : m_watchables) {
-        result.emplace_back(w->name(), w->isAlive());
+        result.push_back({w->name(), w->isAlive(), w->memoryKB(), w->cpuPercent()});
+    }
+    switch (m_sortMode) {
+        case SortMode::CPU:
+            std::sort(result.begin(), result.end(), [](const WatchableStatus& a, const WatchableStatus& b) {
+                return a.cpuPercent > b.cpuPercent;
+            });
+            break;
+        case SortMode::NAME:
+            std::sort(result.begin(), result.end(), [](const WatchableStatus& a, const WatchableStatus& b) {
+                return a.name < b.name;
+            });
+            break;
+        case SortMode::MEMORY:
+        default:
+            std::sort(result.begin(), result.end(), [](const WatchableStatus& a, const WatchableStatus& b) {
+                return a.memoryKB > b.memoryKB;
+            });
+            break;
     }
     return result;
 }
 
-std::vector<std::pair<std::string, std::string>> Watchdog::getDetailedSnapshot() const {
+void Watchdog::setSortMode(SortMode mode) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    std::vector<std::pair<std::string, std::string>> result;
+    m_sortMode = mode;
+}
+
+std::vector<WatchableStatus> Watchdog::getDetailedSnapshot() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    std::vector<WatchableStatus> result;
     result.reserve(m_watchables.size());
 
     for (const auto& w : m_watchables) {
         auto pm = std::dynamic_pointer_cast<ProcessMonitor>(w);
+
+        WatchableStatus status{
+            w->name(),
+            w->isAlive(),
+            w->memoryKB(),
+            w->cpuPercent()
+        };
+
         if (pm) {
-            ProcessState ps = pm->getProcessState();
-            std::string label;
-            switch (ps) {
-                case ProcessState::ALIVE:   label = "ALIVE";   break;
-                case ProcessState::STOPPED: label = "STOPPED"; break;
-                case ProcessState::ZOMBIE:  label = "ZOMBIE";  break;
-                case ProcessState::DEAD:    label = "DEAD";    break;
-                case ProcessState::STUCK:   label = "STUCK";   break;
-            }
-            result.emplace_back(w->name(), label);
-        } else {
-            result.emplace_back(w->name(), w->isAlive() ? "ALIVE" : "DEAD");
+            status.processState = pm->getProcessState();
         }
+
+        result.push_back(status);
     }
+
+    switch (m_sortMode) {
+        case SortMode::CPU:
+            std::sort(result.begin(), result.end(),
+                [](const WatchableStatus& a, const WatchableStatus& b) {
+                    return a.cpuPercent > b.cpuPercent;
+                });
+            break;
+
+        case SortMode::NAME:
+            std::sort(result.begin(), result.end(),
+                [](const WatchableStatus& a, const WatchableStatus& b) {
+                    return a.name < b.name;
+                });
+            break;
+
+        case SortMode::MEMORY:
+        default:
+            std::sort(result.begin(), result.end(),
+                [](const WatchableStatus& a, const WatchableStatus& b) {
+                    return a.memoryKB > b.memoryKB;
+                });
+            break;
+    }
+
     return result;
 }
 
@@ -130,6 +177,32 @@ void Watchdog::monitorLoop() {
                         m_config.pollInterval,
                         [this] {return !m_running.load();});
     }
+}
+
+bool Watchdog::killByName(const std::string& name) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    for (const auto& w : m_watchables) {
+        if (w->name() == name) {
+            auto mgr = std::dynamic_pointer_cast<Manageable>(w);
+            return mgr && mgr->kill();
+        }
+    }
+    return false;
+}
+
+bool Watchdog::restartByName(const std::string& name) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    for (const auto& w : m_watchables) {
+        if (w->name() == name) {
+            auto mgr = std::dynamic_pointer_cast<Manageable>(w);
+            if (!mgr) return false;
+            std::string oldName = w->name();
+            bool ok = mgr->restart();
+            if (ok) m_lastStatus.erase(oldName);
+            return ok;
+        }
+    }
+    return false;
 }
 
 void Watchdog::checkAndLog() {

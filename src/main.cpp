@@ -115,12 +115,40 @@ int main(int argc, char* argv[]) {
                 }
                 break;
             }
+            case ParsedCommand::Type::KILL: {
+                std::string name = cmd.args[0];
+                if (watchdog.killByName(name)) {
+                    renderer.printSuccess("SIGTERM sent to: " + name);
+                } else {
+                    renderer.printWarning("Not found or not killable: " + name);
+                }
+                break;
+            }
+            case ParsedCommand::Type::RESTART: {
+                std::string name = cmd.args[0];
+                renderer.printInfo("Restarting: " + name + " ...");
+                if (watchdog.restartByName(name)) {
+                    renderer.printSuccess("Restarted: " + name);
+                } else {
+                    renderer.printWarning("Not found, not restartable, or restart failed: " + name);
+                }
+                break;
+            }
             case ParsedCommand::Type::LIST:
                 renderer.printList(watchdog.getDetailedSnapshot());
                 break;
+            case ParsedCommand::Type::SORT: {
+                const std::string& field = cmd.args[0];
+                SortMode mode = SortMode::MEMORY;
+                if (field == "cpu")    mode = SortMode::CPU;
+                else if (field == "name") mode = SortMode::NAME;
+                watchdog.setSortMode(mode);
+                renderer.printSuccess("Sort order set to: " + field);
+                break;
+            }
             case ParsedCommand::Type::WATCH: {
-                std::map<std::string, std::string> previousState;
-                std::vector<std::pair<std::string, std::string>> lastSnapshot;
+                std::map<std::string, bool> previousState;
+                std::vector<WatchableStatus> lastSnapshot;
                 std::string lastTimeStr;
                 bool firstIteration = true;
                 int lastLiveLines = 0;
@@ -131,19 +159,19 @@ int main(int argc, char* argv[]) {
                 while (!g_shutdownRequested.load()) {
                     auto currentSnapshot = watchdog.getDetailedSnapshot();
                     std::set<std::string> changedEntities;
-                    
+
                     if (!firstIteration) {
                         for (const auto& entry : currentSnapshot) {
-                            auto it = previousState.find(entry.first);
-                            if (it != previousState.end() && it->second != entry.second) {
-                                changedEntities.insert(entry.first);
+                            auto it = previousState.find(entry.name);
+                            if (it != previousState.end() && it->second != entry.alive) {
+                                changedEntities.insert(entry.name);
                             }
                         }
                     }
-                    
+
                     previousState.clear();
                     for (const auto& entry : currentSnapshot) {
-                        previousState[entry.first] = entry.second;
+                        previousState[entry.name] = entry.alive;
                     }
 
                     bool hasChanges = !changedEntities.empty();

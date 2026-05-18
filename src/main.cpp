@@ -93,19 +93,6 @@ int main(int argc, char* argv[]) {
                 }
                 break;
             }
-            case ParsedCommand::Type::ADD_THREAD: {
-                auto timeout = config.heartbeatTimeout;
-                if (cmd.args.size() > 1) {
-                    timeout = std::chrono::milliseconds(std::stoi(cmd.args[1]));
-                }
-                auto tm = std::make_shared<ThreadMonitor>(timeout, cmd.args[0]);
-                if (watchdog.registerWatchable(tm)) {
-                    renderer.printSuccess("Now monitoring thread: " + cmd.args[0]);
-                } else {
-                    renderer.printWarning("Already monitoring: " + cmd.args[0]);
-                }
-                break;
-            }
             case ParsedCommand::Type::REMOVE: {
                 std::string name = cmd.args[0];
                 if (watchdog.unregisterByName(name)) {

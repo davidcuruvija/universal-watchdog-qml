@@ -32,8 +32,6 @@ void TerminalRenderer::printHelp() const {
       << "  ┌─────────────────────┬───────────────────────────────────┐\n"
       << "  │ " << Color::CYAN << "add process <pid>" << Color::RESET
       << "   │ Start monitoring a process by PID │\n"
-      << "  │ " << Color::CYAN << "add thread <name>" << Color::RESET
-      << "   │ Start monitoring a named thread   │\n"
       << "  │ " << Color::CYAN << "remove <name>" << Color::RESET
       << "       │ Stop monitoring by name           │\n"
       << "  │ " << Color::CYAN << "list" << Color::RESET

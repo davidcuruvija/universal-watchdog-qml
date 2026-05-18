@@ -30,3 +30,5 @@ catch_discover_tests(watchdog_tests)
 # Manual testing utilities
 add_executable(make_zombie manual/make_zombie.cpp)
 add_executable(make_stuck manual/make_stuck.cpp)
+add_executable(thread_demo manual/thread_demo.cpp)
+target_link_libraries(thread_demo PRIVATE watchdog_core Threads::Threads)

@@ -1,5 +1,6 @@
 #include "../include/watchdog.h"
 #include "../include/ProcessMonitor.h"
+#include "../include/ThreadMonitor.h"
 
 #include <chrono>
 #include <iostream>
@@ -112,6 +113,16 @@ std::vector<std::pair<std::string, std::string>> Watchdog::getDetailedSnapshot()
                 case ProcessState::ZOMBIE:  label = "ZOMBIE";  break;
                 case ProcessState::DEAD:    label = "DEAD";    break;
                 case ProcessState::STUCK:   label = "STUCK";   break;
+            }
+            result.emplace_back(w->name(), label);
+        } else if (auto tm = std::dynamic_pointer_cast<ThreadMonitor>(w)) {
+            ThreadState ts = tm->getThreadState();
+            std::string label;
+            switch (ts) {
+                case ThreadState::ALIVE:   label = "ALIVE";   break;
+                case ThreadState::STUCK:   label = "STUCK";   break;
+                case ThreadState::ZOMBIE:  label = "ZOMBIE";  break;
+                case ThreadState::DEAD:    label = "DEAD";    break;
             }
             result.emplace_back(w->name(), label);
         } else {

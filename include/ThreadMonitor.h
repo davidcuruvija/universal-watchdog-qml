@@ -7,6 +7,18 @@
 #include <optional>
 #include <sys/types.h>
 
+#include <sys/types.h>
+
+/**
+ * @brief Granular thread states based on heartbeat and existence.
+ */
+enum class ThreadState {
+    ALIVE,    ///< Heartbeat is current
+    STUCK,    ///< Heartbeat timed out, but thread still exists in /proc/self/task/
+    ZOMBIE,   ///< Heartbeat timed out, thread doesn't exist, but monitor wasn't cleaned up
+    DEAD      ///< Never received a heartbeat or completely dead
+};
+
 /**
  * @brief Monitors a thread's liveness via a periodic heartbeat mechanism.
  *
@@ -60,6 +72,12 @@ public:
      * @brief Returns true if the last heartbeat was within the timeout window.
      */
     bool isAlive() const override;
+
+    /**
+     * @brief Returns the detailed state of the thread based on heartbeat and kernel existence.
+     * @return ThreadState indicating ALIVE, STUCK, ZOMBIE, or DEAD.
+     */
+    ThreadState getThreadState() const;
 
     /**
      * @brief Returns the name of the monitored thread.

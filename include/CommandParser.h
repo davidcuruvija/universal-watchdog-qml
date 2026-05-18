@@ -8,7 +8,6 @@
 struct ParsedCommand {
     enum class Type {
         ADD_PROCESS,    // add process <pid>
-        ADD_THREAD,     // add thread <name> [timeout_ms]
         REMOVE,         // remove <name>
         LIST,           // list
         WATCH,          // watch

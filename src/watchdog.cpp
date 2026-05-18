@@ -163,6 +163,14 @@ void Watchdog::checkAndLog() {
                 case ProcessState::DEAD:    currentState = "DEAD";    break;
                 case ProcessState::STUCK:   currentState = "STUCK";   break;
             }
+        } else if (auto tm = std::dynamic_pointer_cast<ThreadMonitor>(w)) {
+            ThreadState ts = tm->getThreadState();
+            switch (ts) {
+                case ThreadState::ALIVE:   currentState = "ALIVE";   break;
+                case ThreadState::STUCK:   currentState = "STUCK";   break;
+                case ThreadState::ZOMBIE:  currentState = "ZOMBIE";  break;
+                case ThreadState::DEAD:    currentState = "DEAD";    break;
+            }
         } else {
             currentState = w->isAlive() ? "ALIVE" : "DEAD";
         }

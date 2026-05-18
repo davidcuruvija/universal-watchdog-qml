@@ -165,6 +165,16 @@ bool ProcessMonitor::kill() {
 bool ProcessMonitor::restart() {
   if (m_cmdline.empty()) return false;
 
+  // Capture the process's working directory before it exits.
+  std::string cwdPath = "/proc/" + std::to_string(m_pid) + "/cwd";
+  char cwdBuf[4096];
+  ssize_t cwdLen = ::readlink(cwdPath.c_str(), cwdBuf, sizeof(cwdBuf) - 1);
+  std::string originalCwd;
+  if (cwdLen > 0) {
+    cwdBuf[cwdLen] = '\0';
+    originalCwd = cwdBuf;
+  }
+
   ::kill(m_pid, SIGTERM);
 
   // Wait up to 1 s for the process to exit after SIGTERM.
@@ -187,7 +197,7 @@ bool ProcessMonitor::restart() {
   if (newPid < 0) return false;
 
   if (newPid == 0) {
-    // Child: replace process image immediately; inherited mutex state is gone after exec.
+    if (!originalCwd.empty()) ::chdir(originalCwd.c_str());
     execvp(argv[0], const_cast<char* const*>(argv.data()));
     _exit(127);
   }

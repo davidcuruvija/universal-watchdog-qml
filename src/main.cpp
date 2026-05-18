@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
 
     // Print initial list if any were passed via CLI
     if (watchdog.count() > 0) {
-        renderer.printList(watchdog.getStatusSnapshot());
+        renderer.printList(watchdog.getDetailedSnapshot());
     }
 
     std::string line;
@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
                 break;
             }
             case ParsedCommand::Type::LIST:
-                renderer.printList(watchdog.getStatusSnapshot());
+                renderer.printList(watchdog.getDetailedSnapshot());
                 break;
             case ParsedCommand::Type::SORT: {
                 const std::string& field = cmd.args[0];
@@ -157,7 +157,7 @@ int main(int argc, char* argv[]) {
                 renderer.clearVisible();
 
                 while (!g_shutdownRequested.load()) {
-                    auto currentSnapshot = watchdog.getStatusSnapshot();
+                    auto currentSnapshot = watchdog.getDetailedSnapshot();
                     std::set<std::string> changedEntities;
 
                     if (!firstIteration) {

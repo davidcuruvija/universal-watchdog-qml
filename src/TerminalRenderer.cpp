@@ -12,6 +12,7 @@ constexpr const char *GREEN = "\033[32m";
 constexpr const char *YELLOW = "\033[33m";
 constexpr const char *CYAN = "\033[36m";
 constexpr const char *MAGENTA = "\033[35m";
+constexpr const char *ORANGE = "\033[38;5;208m";
 } // namespace Color
 
 void TerminalRenderer::printBanner() const {
@@ -126,6 +127,48 @@ void TerminalRenderer::printList(
   std::cout << "  └────┴────────────────────────────┴──────────┴───────────┴────────┘\n";
   std::cout << "  Monitoring " << entries.size() << " entities (" << aliveCount
             << " alive, " << entries.size() - aliveCount << " dead)\n\n";
+}
+
+void TerminalRenderer::printList(
+    const std::vector<std::pair<std::string, std::string>> &entries,
+    const std::set<std::string>& changedEntities) const {
+  std::cout << "\n  ┌────┬────────────────────────────┬──────────┐\n"
+            << "  │  # │ Name                       │  Status  │\n"
+            << "  ├────┼────────────────────────────┼──────────┤\n";
+
+  int aliveCount = 0;
+  int index = 1;
+  for (const auto &entry : entries) {
+    std::string name = entry.first;
+    if (name.length() > 26) {
+      name = name.substr(0, 23) + "...";
+    }
+
+    std::cout << "  │ " << std::setw(2) << index++ << " │ " << std::left
+              << std::setw(26) << name << std::right << " │ ";
+    
+    const std::string& status = entry.second;
+    if (status == "ALIVE") {
+      std::cout << Color::GREEN << "● ALIVE " << Color::RESET << " │";
+      aliveCount++;
+    } else if (status == "STOPPED") {
+      std::cout << Color::YELLOW << "⏸ STOP  " << Color::RESET << " │";
+    } else if (status == "ZOMBIE") {
+      std::cout << Color::MAGENTA << "☠ ZOMBIE" << Color::RESET << " │";
+    } else if (status == "STUCK") {
+      std::cout << Color::ORANGE << "⚠ STUCK " << Color::RESET << " │";
+    } else {
+      std::cout << Color::RED << "○ DEAD  " << Color::RESET << " │";
+    }
+
+    if (changedEntities.count(entry.first) > 0) {
+      std::cout << "  " << Color::YELLOW << "⚡ STATE CHANGED" << Color::RESET;
+    }
+    std::cout << "\n";
+  }
+  std::cout << "  └────┴────────────────────────────┴──────────┘\n";
+  std::cout << "  Monitoring " << entries.size() << " entities (" << aliveCount
+            << " alive, " << entries.size() - aliveCount << " other)\n\n";
 }
 
 void TerminalRenderer::printSuccess(const std::string &msg) const {

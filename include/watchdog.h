@@ -130,6 +130,12 @@ public:
      */
     bool restartByName(const std::string& name);
 
+    /**
+     * @brief Returns a detailed snapshot including granular state for ProcessMonitors.
+     * @return Vector of (name, statusString) pairs.
+     */
+    std::vector<std::pair<std::string, std::string>> getDetailedSnapshot() const;
+
 private:
     
     void monitorLoop();
@@ -139,7 +145,7 @@ private:
     Config m_config;
     SortMode m_sortMode{SortMode::MEMORY};
     std::vector<std::shared_ptr<Watchable>> m_watchables;
-    std::unordered_map<std::string, bool> m_lastStatus;
+    std::unordered_map<std::string, std::string> m_lastStatus;
     std::chrono::steady_clock::time_point m_lastSummary;
 
     mutable std::mutex m_mutex;

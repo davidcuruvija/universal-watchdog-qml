@@ -1,4 +1,5 @@
 #include "../include/watchdog.h"
+#include "../include/ProcessMonitor.h"
 
 #include <chrono>
 #include <iostream>
@@ -118,6 +119,54 @@ void Watchdog::setSortMode(SortMode mode) {
     m_sortMode = mode;
 }
 
+std::vector<WatchableStatus> Watchdog::getDetailedSnapshot() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    std::vector<WatchableStatus> result;
+    result.reserve(m_watchables.size());
+
+    for (const auto& w : m_watchables) {
+        auto pm = std::dynamic_pointer_cast<ProcessMonitor>(w);
+
+        WatchableStatus status{
+            w->name(),
+            w->isAlive(),
+            w->memoryKB(),
+            w->cpuPercent()
+        };
+
+        if (pm) {
+            status.processState = pm->getProcessState();
+        }
+
+        result.push_back(status);
+    }
+
+    switch (m_sortMode) {
+        case SortMode::CPU:
+            std::sort(result.begin(), result.end(),
+                [](const WatchableStatus& a, const WatchableStatus& b) {
+                    return a.cpuPercent > b.cpuPercent;
+                });
+            break;
+
+        case SortMode::NAME:
+            std::sort(result.begin(), result.end(),
+                [](const WatchableStatus& a, const WatchableStatus& b) {
+                    return a.name < b.name;
+                });
+            break;
+
+        case SortMode::MEMORY:
+        default:
+            std::sort(result.begin(), result.end(),
+                [](const WatchableStatus& a, const WatchableStatus& b) {
+                    return a.memoryKB > b.memoryKB;
+                });
+            break;
+    }
+
+    return result;
+}
 
 void Watchdog::monitorLoop() {
     while (m_running.load()) {
@@ -164,20 +213,33 @@ void Watchdog::checkAndLog() {
 
     for (const auto& w : m_watchables) {
         const std::string watchableName = w->name();
-        const bool aliveNow = w->isAlive();
+        
+        std::string currentState;
+        auto pm = std::dynamic_pointer_cast<ProcessMonitor>(w);
+        if (pm) {
+            ProcessState ps = pm->getProcessState();
+            switch (ps) {
+                case ProcessState::ALIVE:   currentState = "ALIVE";   break;
+                case ProcessState::STOPPED: currentState = "STOPPED"; break;
+                case ProcessState::ZOMBIE:  currentState = "ZOMBIE";  break;
+                case ProcessState::DEAD:    currentState = "DEAD";    break;
+                case ProcessState::STUCK:   currentState = "STUCK";   break;
+            }
+        } else {
+            currentState = w->isAlive() ? "ALIVE" : "DEAD";
+        }
 
         auto it = m_lastStatus.find(watchableName);
         const bool firstCheck = (it == m_lastStatus.end());
-        const bool changed = !firstCheck && (it->second != aliveNow);
+        const bool changed = !firstCheck && (it->second != currentState);
 
         const bool shouldLog = firstCheck || changed || summaryDue;
 
         if (shouldLog) {
-            const std::string status = aliveNow ? "ALIVE" : "DEAD";
-            m_logger.log("[" + watchableName + "] " + status);
+            m_logger.log("[" + watchableName + "] " + currentState);
         }
 
-        m_lastStatus[watchableName] = aliveNow;
+        m_lastStatus[watchableName] = currentState;
     }
 
     if (summaryDue) {

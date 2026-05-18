@@ -186,7 +186,7 @@ TEST_CASE("unregisterByName returns false for unknown name",
     REQUIRE(wd.count() == 1);
 }
 
-TEST_CASE("registerWatchable rejects duplicate names",
+TEST_CASE("registerWatchable rejects duplicates by name",
           "[watchdog][register][edge]") {
     std::ostringstream oss;
     Logger logger(oss);
@@ -195,7 +195,6 @@ TEST_CASE("registerWatchable rejects duplicate names",
     REQUIRE(wd.registerWatchable(std::make_shared<FakeWatchable>("worker", true)));
     REQUIRE_FALSE(wd.registerWatchable(std::make_shared<FakeWatchable>("worker", false)));
     REQUIRE(wd.count() == 1);
-
     REQUIRE(wd.unregisterByName("worker"));
     REQUIRE(wd.count() == 0);
     REQUIRE_FALSE(wd.unregisterByName("worker"));

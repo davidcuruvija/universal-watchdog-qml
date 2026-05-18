@@ -107,3 +107,60 @@ TEST_CASE("ProcessMonitor tracks stopped/frozen process (T state)", "[ProcessMon
     waitpid(pid, &status, 0);
   }
 }
+
+TEST_CASE("ProcessMonitor returns getProcessState correctly", "[ProcessMonitor][State]") {
+  SECTION("Running process returns ALIVE state") {
+    auto monitor = std::make_shared<ProcessMonitor>(getpid());
+    REQUIRE(monitor->getProcessState() == ProcessState::ALIVE);
+  }
+
+  SECTION("Stopped process returns STOPPED state") {
+    pid_t pid = fork();
+    REQUIRE(pid >= 0);
+    if (pid == 0) {
+      while (true) { usleep(10000); }
+    } else {
+      usleep(50000);
+      auto monitor = std::make_shared<ProcessMonitor>(pid);
+      REQUIRE(monitor->getProcessState() == ProcessState::ALIVE);
+      
+      kill(pid, SIGSTOP);
+      usleep(50000);
+      REQUIRE(monitor->getProcessState() == ProcessState::STOPPED);
+      
+      kill(pid, SIGKILL);
+      int status;
+      waitpid(pid, &status, 0);
+    }
+  }
+
+  SECTION("Zombie process returns ZOMBIE state") {
+    pid_t pid = fork();
+    REQUIRE(pid >= 0);
+    if (pid == 0) {
+      std::exit(0);
+    } else {
+      usleep(50000);
+      auto monitor = std::make_shared<ProcessMonitor>(pid);
+      REQUIRE(monitor->getProcessState() == ProcessState::ZOMBIE);
+      
+      int status;
+      waitpid(pid, &status, 0);
+    }
+  }
+
+  SECTION("Non-existent process returns DEAD state") {
+    // A process that dies after being successfully created
+    pid_t pid = fork();
+    REQUIRE(pid >= 0);
+    if (pid == 0) {
+      std::exit(0);
+    } else {
+      usleep(50000);
+      auto monitor = std::make_shared<ProcessMonitor>(pid);
+      int status;
+      waitpid(pid, &status, 0); // Reap the zombie, now it is fully dead
+      REQUIRE(monitor->getProcessState() == ProcessState::DEAD);
+    }
+  }
+}

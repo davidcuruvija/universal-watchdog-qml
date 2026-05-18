@@ -8,6 +8,17 @@
 #include <sys/types.h>
 
 /**
+ * @brief Granular process states derived from /proc/<pid>/stat.
+ */
+enum class ProcessState {
+    ALIVE,    ///< R (Running) or S (Sleeping) — healthy
+    STOPPED,  ///< T — process frozen by signal or debugger
+    ZOMBIE,   ///< Z — terminated but not yet reaped
+    DEAD,     ///< /proc/<pid>/stat does not exist
+    STUCK     ///< D (Disk sleep) for longer than threshold
+};
+
+/**
  * @class ProcessMonitor
  * @brief Monitors a specific system process using its Process ID (PID).
  *
@@ -17,10 +28,20 @@
  */
 class ProcessMonitor : public Manageable {
 private:
-  pid_t m_pid;
-  std::string m_processName;
-  std::string m_name;
+  pid_t m_pid;        ///< The Process ID (PID) of the monitored process.
+  std::string m_processName;  ///< Raw process name
+  std::string m_name; ///< Name including PID (e.g. "firefox (pid=1234)")
   std::vector<std::string> m_cmdline; ///< Original argv, captured at construction for restart.
+
+  // D-state tracking
+  mutable bool m_inDState = false;
+  mutable std::chrono::steady_clock::time_point m_dStateSince;
+
+  /**
+   * @brief Reads the raw state character from /proc/<pid>/stat.
+   * @return The state char ('R','S','D','T','Z') or '\0' if unreadable.
+   */
+  char readRawState() const;
 
   std::string getStatPath() const {
     return "/proc/" + std::to_string(m_pid) + "/stat";
@@ -32,7 +53,7 @@ private:
   mutable long m_prevCpuTicks{-1};
   mutable std::chrono::steady_clock::time_point m_prevCpuTime;
 
-public:
+ public:
   /**
    * @brief Constructs a ProcessMonitor for the specified PID.
    *
@@ -81,4 +102,12 @@ public:
    * returns 0. Returns 0 if the process is unreachable.
    */
   double cpuPercent() const override;
+
+  /**
+   * @brief Returns the granular process state.
+   *
+   * Uses the raw state character from /proc/<pid>/stat and applies
+   * D-state timeout logic to distinguish healthy disk-sleep from stuck.
+   */
+  ProcessState getProcessState() const;
 };

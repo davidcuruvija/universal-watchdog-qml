@@ -61,7 +61,7 @@ ParsedCommand CommandParser::parse(const std::string& input) const {
     } else if (verb == "add") {
         if (tokens.size() < 3) {
             cmd.type = ParsedCommand::Type::UNKNOWN;
-            cmd.errorMessage = "Usage: add process <pid> OR add thread <name> [timeout_ms]";
+            cmd.errorMessage = "Usage: add process <pid>";
             return cmd;
         }
         std::string target = toLower(tokens[1]);
@@ -75,21 +75,9 @@ ParsedCommand CommandParser::parse(const std::string& input) const {
                 cmd.type = ParsedCommand::Type::UNKNOWN;
                 cmd.errorMessage = "Invalid PID format: " + tokens[2];
             }
-        } else if (target == "thread") {
-            cmd.type = ParsedCommand::Type::ADD_THREAD;
-            cmd.args.push_back(tokens[2]); // name
-            if (tokens.size() > 3) {
-                cmd.args.push_back(tokens[3]); // timeout
-                try {
-                    std::stoi(tokens[3]);
-                } catch(...) {
-                    cmd.type = ParsedCommand::Type::UNKNOWN;
-                    cmd.errorMessage = "Invalid timeout format: " + tokens[3];
-                }
-            }
         } else {
             cmd.type = ParsedCommand::Type::UNKNOWN;
-            cmd.errorMessage = "Unknown target for 'add'. Use 'process' or 'thread'.";
+            cmd.errorMessage = "Unknown target for 'add'. Use 'process'.";
         }
     } else if (verb == "remove") {
         if (tokens.size() < 2) {

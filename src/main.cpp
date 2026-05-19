@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
 
     // Print initial list if any were passed via CLI
     if (watchdog.count() > 0) {
-        renderer.printList(watchdog.getDetailedSnapshot());
+        renderer.printList(watchdog.getStatusSnapshot());
     }
 
     std::string line;
@@ -90,19 +90,6 @@ int main(int argc, char* argv[]) {
                     }
                 } catch(const std::exception& ex) {
                     renderer.printError("Failed to add process: " + std::string(ex.what()));
-                }
-                break;
-            }
-            case ParsedCommand::Type::ADD_THREAD: {
-                auto timeout = config.heartbeatTimeout;
-                if (cmd.args.size() > 1) {
-                    timeout = std::chrono::milliseconds(std::stoi(cmd.args[1]));
-                }
-                auto tm = std::make_shared<ThreadMonitor>(timeout, cmd.args[0]);
-                if (watchdog.registerWatchable(tm)) {
-                    renderer.printSuccess("Now monitoring thread: " + cmd.args[0]);
-                } else {
-                    renderer.printWarning("Already monitoring: " + cmd.args[0]);
                 }
                 break;
             }
@@ -135,7 +122,7 @@ int main(int argc, char* argv[]) {
                 break;
             }
             case ParsedCommand::Type::LIST:
-                renderer.printList(watchdog.getDetailedSnapshot());
+                renderer.printList(watchdog.getStatusSnapshot());
                 break;
             case ParsedCommand::Type::SORT: {
                 const std::string& field = cmd.args[0];
@@ -147,7 +134,7 @@ int main(int argc, char* argv[]) {
                 break;
             }
             case ParsedCommand::Type::WATCH: {
-                std::map<std::string, bool> previousState;
+                std::map<std::string, std::string> previousState;
                 std::vector<WatchableStatus> lastSnapshot;
                 std::string lastTimeStr;
                 bool firstIteration = true;
@@ -157,13 +144,13 @@ int main(int argc, char* argv[]) {
                 renderer.clearVisible();
 
                 while (!g_shutdownRequested.load()) {
-                    auto currentSnapshot = watchdog.getDetailedSnapshot();
+                    auto currentSnapshot = watchdog.getStatusSnapshot();
                     std::set<std::string> changedEntities;
 
                     if (!firstIteration) {
                         for (const auto& entry : currentSnapshot) {
                             auto it = previousState.find(entry.name);
-                            if (it != previousState.end() && it->second != entry.alive) {
+                            if (it != previousState.end() && it->second != entry.statusLabel) {
                                 changedEntities.insert(entry.name);
                             }
                         }
@@ -171,7 +158,7 @@ int main(int argc, char* argv[]) {
 
                     previousState.clear();
                     for (const auto& entry : currentSnapshot) {
-                        previousState[entry.name] = entry.alive;
+                        previousState[entry.name] = entry.statusLabel;
                     }
 
                     bool hasChanges = !changedEntities.empty();

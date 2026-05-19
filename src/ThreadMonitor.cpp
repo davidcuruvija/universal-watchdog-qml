@@ -36,6 +36,31 @@ bool ThreadMonitor::isAlive() const {
     return elapsed < m_timeout;
 }
 
+ThreadState ThreadMonitor::getThreadState() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+
+    // If we have a TID, check kernel existence first
+    if (m_nativeTid.has_value()) {
+        const std::string taskPath = "/proc/self/task/" + std::to_string(m_nativeTid.value());
+        if (!std::filesystem::exists(taskPath)) {
+            return ThreadState::ZOMBIE;
+        }
+    }
+
+    const auto elapsed = std::chrono::steady_clock::now() - m_lastHeartbeat;
+    bool heartbeatValid = (elapsed < m_timeout);
+
+    if (heartbeatValid) {
+        return ThreadState::ALIVE;
+    }
+
+    if (m_nativeTid.has_value()) {
+        return ThreadState::STUCK;
+    }
+
+    return ThreadState::DEAD;
+}
+
 std::string ThreadMonitor::name() const {
     return m_threadName;
 }

@@ -176,6 +176,13 @@ TEST_CASE("ThreadMonitor multiple rapid heartbeats do not corrupt state", "[thre
     REQUIRE_FALSE(tm.isAlive());
 }
 
+TEST_CASE("ThreadMonitor state: DEAD when no heartbeat received", "[threadMonitor][states]") {
+    ThreadMonitor tm(100ms, "NeverStartedThread");
+    
+    std::this_thread::sleep_for(150ms);
+    REQUIRE(tm.getThreadState() == ThreadState::DEAD); 
+}
+
 TEST_CASE("ThreadMonitor state: ALIVE", "[threadMonitor][states]") {
     ThreadMonitor tm(100ms, "AliveThread");
     std::atomic<bool> stop{false};
@@ -201,7 +208,7 @@ TEST_CASE("ThreadMonitor state: ALIVE", "[threadMonitor][states]") {
         }
         cv.notify_one();
         std::this_thread::sleep_for(40ms);
-        REQUIRE(tm.isAlive() == true);
+        REQUIRE(tm.getThreadState() == ThreadState::ALIVE);
     }
 
     stop = true;
@@ -227,7 +234,7 @@ TEST_CASE("ThreadMonitor state: STUCK", "[threadMonitor][states]") {
 
     std::this_thread::sleep_for(150ms);
     
-    REQUIRE(tm.isAlive() == false);
+    REQUIRE(tm.getThreadState() == ThreadState::STUCK);
 
     main_lock.unlock();
     t.join();
@@ -242,9 +249,9 @@ TEST_CASE("ThreadMonitor state: DEAD", "[threadMonitor][states]") {
         std::this_thread::sleep_for(150ms);
     });
 
-    t.join();
-
-    REQUIRE(tm.isAlive() == false);
+    t.join(); 
+    
+    REQUIRE(tm.getThreadState() == ThreadState::ZOMBIE);
 }
 
 TEST_CASE("ThreadMonitor state: ZOMBIE", "[threadMonitor][states]") {
@@ -258,5 +265,6 @@ TEST_CASE("ThreadMonitor state: ZOMBIE", "[threadMonitor][states]") {
     std::this_thread::sleep_for(50ms);
     
     t.detach();
-    REQUIRE(tm.isAlive() == false); 
+    std::this_thread::sleep_for(150ms);
+    REQUIRE(tm.getThreadState() == ThreadState::ZOMBIE); 
 }

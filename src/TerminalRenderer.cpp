@@ -33,8 +33,6 @@ void TerminalRenderer::printHelp() const {
       << "  ┌──────────────────────────┬───────────────────────────────────┐\n"
       << "  │ " << Color::CYAN << "add process <pid>" << Color::RESET
       << "        │ Start monitoring a process by PID │\n"
-      << "  │ " << Color::CYAN << "add thread <name>" << Color::RESET
-      << "        │ Start monitoring a named thread   │\n"
       << "  │ " << Color::CYAN << "remove <name>" << Color::RESET
       << "            │ Stop monitoring by name           │\n"
       << "  │ " << Color::CYAN << "kill <name>" << Color::RESET
@@ -109,45 +107,7 @@ void TerminalRenderer::printList(
     std::cout << "  │ " << std::setw(2) << index++ << " │ " << std::left
               << std::setw(26) << name << std::right << " │ ";
 
-    if (entry.alive) {
-      std::cout << Color::GREEN << "● ALIVE " << Color::RESET << " │";
-      aliveCount++;
-    } else {
-      std::cout << Color::RED << "○ DEAD  " << Color::RESET << " │";
-    }
-
-    std::cout << std::right << std::setw(9) << formatMemory(entry.memoryKB) << "  │";
-    std::cout << std::right << std::setw(6) << formatCpu(entry.cpuPercent) << "  │";
-
-    if (changedEntities.count(entry.name) > 0) {
-      std::cout << "  " << Color::YELLOW << "⚡ STATE CHANGED" << Color::RESET;
-    }
-    std::cout << "\n";
-  }
-  std::cout << "  └────┴────────────────────────────┴──────────┴───────────┴────────┘\n";
-  std::cout << "  Monitoring " << entries.size() << " entities (" << aliveCount
-            << " alive, " << entries.size() - aliveCount << " dead)\n\n";
-}
-
-void TerminalRenderer::printList(
-    const std::vector<std::pair<std::string, std::string>> &entries,
-    const std::set<std::string>& changedEntities) const {
-  std::cout << "\n  ┌────┬────────────────────────────┬──────────┐\n"
-            << "  │  # │ Name                       │  Status  │\n"
-            << "  ├────┼────────────────────────────┼──────────┤\n";
-
-  int aliveCount = 0;
-  int index = 1;
-  for (const auto &entry : entries) {
-    std::string name = entry.first;
-    if (name.length() > 26) {
-      name = name.substr(0, 23) + "...";
-    }
-
-    std::cout << "  │ " << std::setw(2) << index++ << " │ " << std::left
-              << std::setw(26) << name << std::right << " │ ";
-    
-    const std::string& status = entry.second;
+    const std::string& status = entry.statusLabel;
     if (status == "ALIVE") {
       std::cout << Color::GREEN << "● ALIVE " << Color::RESET << " │";
       aliveCount++;
@@ -161,12 +121,15 @@ void TerminalRenderer::printList(
       std::cout << Color::RED << "○ DEAD  " << Color::RESET << " │";
     }
 
-    if (changedEntities.count(entry.first) > 0) {
+    std::cout << std::right << std::setw(9) << formatMemory(entry.memoryKB) << "  │";
+    std::cout << std::right << std::setw(6) << formatCpu(entry.cpuPercent) << "  │";
+
+    if (changedEntities.count(entry.name) > 0) {
       std::cout << "  " << Color::YELLOW << "⚡ STATE CHANGED" << Color::RESET;
     }
     std::cout << "\n";
   }
-  std::cout << "  └────┴────────────────────────────┴──────────┘\n";
+  std::cout << "  └────┴────────────────────────────┴──────────┴───────────┴────────┘\n";
   std::cout << "  Monitoring " << entries.size() << " entities (" << aliveCount
             << " alive, " << entries.size() - aliveCount << " other)\n\n";
 }

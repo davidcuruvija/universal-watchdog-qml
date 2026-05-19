@@ -3,27 +3,27 @@
 #include <unistd.h>
 
 int main() {
-    printf("Roditeljski proces (PID: %d).\n", getpid());
-    printf("Ovaj proces ce uci u 'D' (Disk Sleep/Uninterruptible) stanje na 60 sekundi.\n");
-    printf("Da ga pratis u watchdog-u, kucaj: add process %d\n", getpid());
+    printf("Parent process (PID: %d).\n", getpid());
+    printf("This process will enter the 'D' (Disk Sleep/Uninterruptible) state for 60 seconds.\n");
+    printf("To monitor it in the watchdog, type: add process %d\n", getpid());
     
-    // vfork pauzira roditelja u 'D' stanju dok dete ne pozove exec() ili _exit()
+    // vfork pauses the parent in 'D' state until the child calls exec() or _exit()
     pid_t pid = vfork();
     
     if (pid == 0) {
         // Child process
-        sleep(60); // Drzi roditelja u D stanju 60 sekundi
+        sleep(60); // Keeps the parent in D state for 60 seconds
         _exit(0);
     } else if (pid > 0) {
-        // Parent process se budi ovde posle 60 sekundi
-        printf("Roditelj se probudio iz D stanja!\n");
-        printf("Sada cu spavati normalno jos 30 sekundi da mozes da vidis ALIVE stanje...\n");
+        // Parent process wakes up here after 60 seconds
+        printf("Parent woke up from D state!\n");
+        printf("Now sleeping normally for 30 seconds so you can see the ALIVE state...\n");
         sleep(30);
     } else {
         perror("vfork failed");
         return 1;
     }
 
-    printf("Kraj programa.\n");
+    printf("Program finished.\n");
     return 0;
 }

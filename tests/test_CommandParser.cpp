@@ -9,14 +9,6 @@ TEST_CASE("CommandParser: add process") {
     REQUIRE(cmd.args[0] == "1234");
 }
 
-TEST_CASE("CommandParser: add thread") {
-    CommandParser parser;
-    auto cmd = parser.parse("add thread worker-1 2000");
-    REQUIRE(cmd.type == ParsedCommand::Type::ADD_THREAD);
-    REQUIRE(cmd.args[0] == "worker-1");
-    REQUIRE(cmd.args[1] == "2000");
-}
-
 TEST_CASE("CommandParser: remove") {
     CommandParser parser;
     auto cmd = parser.parse("remove firefox (pid=1234)");

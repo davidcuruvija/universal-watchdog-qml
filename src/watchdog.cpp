@@ -1,5 +1,6 @@
 #include "../include/watchdog.h"
 #include "../include/ProcessMonitor.h"
+#include "../include/ThreadMonitor.h"
 
 #include <chrono>
 #include <iostream>
@@ -91,7 +92,33 @@ std::vector<WatchableStatus> Watchdog::getStatusSnapshot() const {
     std::vector<WatchableStatus> result;
     result.reserve(m_watchables.size());
     for (const auto& w : m_watchables) {
-        result.push_back({w->name(), w->isAlive(), w->memoryKB(), w->cpuPercent()});
+        WatchableStatus status{
+            w->name(),
+            w->isAlive(),
+            w->memoryKB(),
+            w->cpuPercent(),
+            w->isAlive() ? "ALIVE" : "DEAD"
+        };
+
+        if (auto pm = std::dynamic_pointer_cast<ProcessMonitor>(w)) {
+            ProcessState ps = pm->getProcessState();
+            switch (ps) {
+                case ProcessState::ALIVE:   status.statusLabel = "ALIVE";   break;
+                case ProcessState::STOPPED: status.statusLabel = "STOPPED"; break;
+                case ProcessState::ZOMBIE:  status.statusLabel = "ZOMBIE";  break;
+                case ProcessState::DEAD:    status.statusLabel = "DEAD";    break;
+                case ProcessState::STUCK:   status.statusLabel = "STUCK";   break;
+            }
+        } else if (auto tm = std::dynamic_pointer_cast<ThreadMonitor>(w)) {
+            ThreadState ts = tm->getThreadState();
+            switch (ts) {
+                case ThreadState::ALIVE:   status.statusLabel = "ALIVE";   break;
+                case ThreadState::STUCK:   status.statusLabel = "STUCK";   break;
+                case ThreadState::ZOMBIE:  status.statusLabel = "ZOMBIE";  break;
+                case ThreadState::DEAD:    status.statusLabel = "DEAD";    break;
+            }
+        }
+        result.push_back(status);
     }
     switch (m_sortMode) {
         case SortMode::CPU:
@@ -117,55 +144,6 @@ std::vector<WatchableStatus> Watchdog::getStatusSnapshot() const {
 void Watchdog::setSortMode(SortMode mode) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_sortMode = mode;
-}
-
-std::vector<WatchableStatus> Watchdog::getDetailedSnapshot() const {
-    std::lock_guard<std::mutex> lock(m_mutex);
-    std::vector<WatchableStatus> result;
-    result.reserve(m_watchables.size());
-
-    for (const auto& w : m_watchables) {
-        auto pm = std::dynamic_pointer_cast<ProcessMonitor>(w);
-
-        WatchableStatus status{
-            w->name(),
-            w->isAlive(),
-            w->memoryKB(),
-            w->cpuPercent()
-        };
-
-        if (pm) {
-            status.processState = pm->getProcessState();
-        }
-
-        result.push_back(status);
-    }
-
-    switch (m_sortMode) {
-        case SortMode::CPU:
-            std::sort(result.begin(), result.end(),
-                [](const WatchableStatus& a, const WatchableStatus& b) {
-                    return a.cpuPercent > b.cpuPercent;
-                });
-            break;
-
-        case SortMode::NAME:
-            std::sort(result.begin(), result.end(),
-                [](const WatchableStatus& a, const WatchableStatus& b) {
-                    return a.name < b.name;
-                });
-            break;
-
-        case SortMode::MEMORY:
-        default:
-            std::sort(result.begin(), result.end(),
-                [](const WatchableStatus& a, const WatchableStatus& b) {
-                    return a.memoryKB > b.memoryKB;
-                });
-            break;
-    }
-
-    return result;
 }
 
 void Watchdog::monitorLoop() {
@@ -224,6 +202,14 @@ void Watchdog::checkAndLog() {
                 case ProcessState::ZOMBIE:  currentState = "ZOMBIE";  break;
                 case ProcessState::DEAD:    currentState = "DEAD";    break;
                 case ProcessState::STUCK:   currentState = "STUCK";   break;
+            }
+        } else if (auto tm = std::dynamic_pointer_cast<ThreadMonitor>(w)) {
+            ThreadState ts = tm->getThreadState();
+            switch (ts) {
+                case ThreadState::ALIVE:   currentState = "ALIVE";   break;
+                case ThreadState::STUCK:   currentState = "STUCK";   break;
+                case ThreadState::ZOMBIE:  currentState = "ZOMBIE";  break;
+                case ThreadState::DEAD:    currentState = "DEAD";    break;
             }
         } else {
             currentState = w->isAlive() ? "ALIVE" : "DEAD";

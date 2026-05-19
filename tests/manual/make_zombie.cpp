@@ -8,17 +8,17 @@ int main() {
 
     if (pid > 0) {
         // Parent process
-        printf("Roditeljski proces (PID: %d) spava.\n", getpid());
-        printf("Zombi proces je kreiran (Child PID: %d).\n", pid);
-        printf("Da ga pratis u watchdog-u, kucaj: add process %d\n", pid);
-        printf("Pritisni Ctrl+C da zavrsis i ocistis zombija.\n");
+        printf("Parent process (PID: %d) is sleeping.\n", getpid());
+        printf("Zombie process created (Child PID: %d).\n", pid);
+        printf("To monitor it in the watchdog, type: add process %d\n", pid);
+        printf("Press Ctrl+C to terminate and clean up the zombie.\n");
         
-        // Spavaj beskonacno kako bi child ostao zombi
+        // Sleep infinitely so the child remains a zombie
         while (1) {
             sleep(1);
         }
     } else if (pid == 0) {
-        // Child process odma zavrsava
+        // Child process exits immediately
         exit(0);
     } else {
         perror("Fork failed");

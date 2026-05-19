@@ -242,15 +242,16 @@ TEST_CASE("ThreadMonitor state: STUCK", "[threadMonitor][states]") {
 
 TEST_CASE("ThreadMonitor state: DEAD", "[threadMonitor][states]") {
     ThreadMonitor tm(100ms, "DeadThread");
-    
+
     std::thread t([&]() {
         tm.updateHeartbeat();
-        std::this_thread::sleep_for(20ms);
+        // sleep longer than the timeout so the heartbeat expires before join returns
+        std::this_thread::sleep_for(150ms);
     });
 
     t.join(); 
     
-    REQUIRE(tm.getThreadState() == ThreadState::ZOMBIE); 
+    REQUIRE(tm.getThreadState() == ThreadState::ZOMBIE);
 }
 
 TEST_CASE("ThreadMonitor state: ZOMBIE", "[threadMonitor][states]") {

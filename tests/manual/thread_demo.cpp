@@ -81,7 +81,7 @@ int main() {
         std::cout << "\n\033[36m\033[1m  === EMBEDDED WATCHDOG SIMULATION ===\033[0m\n";
         std::cout << "  This program simulates how an application uses Watchdog internally.\n";
         
-        auto snapshot = watchdog.getDetailedSnapshot();
+        auto snapshot = watchdog.getStatusSnapshot();
         renderer.printWatchHeader("Simulation running...", true);
         renderer.printList(snapshot);
         

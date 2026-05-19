@@ -1,9 +1,11 @@
 #pragma once
 
-#include "watchable.h"
+#include "Manageable.h"
 
-#include <sys/types.h>
 #include <chrono>
+#include <string>
+#include <vector>
+#include <sys/types.h>
 
 /**
  * @brief Granular process states derived from /proc/<pid>/stat.
@@ -20,15 +22,17 @@ enum class ProcessState {
  * @class ProcessMonitor
  * @brief Monitors a specific system process using its Process ID (PID).
  *
- * This class implements the Watchable interface to monitor the state
- * of system processes by reading from the /proc filesystem in Linux.
+ * Implements Manageable so the process can be killed or restarted through
+ * the watchdog interface. The original command line is captured at
+ * construction from /proc/<pid>/cmdline and used for restart.
  */
-class ProcessMonitor : public Watchable {
+class ProcessMonitor : public Manageable {
 private:
   pid_t m_pid;        ///< The Process ID (PID) of the monitored process.
-  std::string m_processName;  ///< Raw process name 
+  std::string m_processName;  ///< Raw process name
   std::string m_name; ///< Name including PID (e.g. "firefox (pid=1234)")
-  
+  std::vector<std::string> m_cmdline; ///< Original argv, captured at construction for restart.
+
   // D-state tracking
   mutable bool m_inDState = false;
   mutable std::chrono::steady_clock::time_point m_dStateSince;
@@ -39,42 +43,65 @@ private:
    */
   char readRawState() const;
 
-  /**
-   * @brief Returns the absolute filesystem path to the process's status file.
-   *
-   * This path is used to retrieve system-level process information, typically
-   * from the /proc filesystem on Linux systems.
-   *
-   * @return std::string The absolute path to the status file.
-   */
   std::string getStatPath() const {
     return "/proc/" + std::to_string(m_pid) + "/stat";
   }
 
-public:
+  static std::vector<std::string> readCmdline(pid_t pid);
+  static long readCpuTicks(pid_t pid);
+
+  mutable long m_prevCpuTicks{-1};
+  mutable std::chrono::steady_clock::time_point m_prevCpuTime;
+
+ public:
   /**
    * @brief Constructs a ProcessMonitor for the specified PID.
-   * @param pid The Process ID of the target process to monitor.
+   *
+   * Reads the process name and command line from /proc. Throws
+   * std::invalid_argument if the process does not exist.
    */
   explicit ProcessMonitor(pid_t pid);
 
-  /**
-   * @brief Retrieves the name of the monitored process.
-   * @return The process name extracted from the system.
-   */
   std::string name() const override;
 
   /**
-   * @brief Evaluates if the monitored process is currently alive.
-   *
-   * Parses the stat file to check the exact state character.
-   *
-   * @return true If the process is in Running (R), Sleeping (S), or Disk Sleep
-   * (D) state.
-   * @return false If the process does not exist, or is in Zombie (Z) or Stopped
-   * (T) state.
+   * @brief Returns true if the process is in R, S, or D state.
    */
   bool isAlive() const override;
+
+  /**
+   * @brief Sends SIGTERM to the monitored process.
+   * @return true if ::kill() succeeded.
+   */
+  bool kill() override;
+
+  /**
+   * @brief Kills the process and relaunches it with the original command line.
+   *
+   * Waits up to one second for the process to exit after SIGTERM, then sends
+   * SIGKILL. Forks and execs the stored argv. Updates the tracked PID.
+   *
+   * @return true if a new child process was spawned.
+   * @return false if the original command line is unavailable or fork failed.
+   */
+  bool restart() override;
+
+  pid_t pid() const { return m_pid; }
+
+  /**
+   * @brief Returns the resident set size (VmRSS) in kilobytes from /proc.
+   * Returns 0 if the process is not alive or the value cannot be read.
+   */
+  long memoryKB() const override;
+
+  /**
+   * @brief Returns CPU usage percentage since the last call.
+   *
+   * Reads utime+stime from /proc/<pid>/stat and computes a percentage over
+   * the elapsed wall-clock time. The first call seeds the baseline and
+   * returns 0. Returns 0 if the process is unreachable.
+   */
+  double cpuPercent() const override;
 
   /**
    * @brief Returns the granular process state.

@@ -53,3 +53,9 @@ endif()
 # -----------------------------------------------------------------------------
 add_executable(watchdog_app src/main.cpp)
 target_link_libraries(watchdog_app PRIVATE watchdog_core)
+
+# -----------------------------------------------------------------------------
+# Demo
+# -----------------------------------------------------------------------------
+add_executable(watchdog_demo demo/demo.cpp)
+target_link_libraries(watchdog_demo PRIVATE watchdog_core)

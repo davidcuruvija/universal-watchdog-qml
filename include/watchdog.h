@@ -10,6 +10,7 @@
 #include <unordered_map>
 
 #include "watchable.h"
+#include "Manageable.h"
 #include "logger.h"
 #include "Config.h"
 
@@ -28,6 +29,8 @@
  * The class is non-copyable and non-movable because it owns a background thread.
  *
  */
+
+enum class SortMode { MEMORY, CPU, NAME };
 
 class Watchdog{
 public:
@@ -101,9 +104,31 @@ public:
     /**
      * @brief Returns a snapshot of all monitored entities with their current status.
      * Thread-safe. Takes the lock, copies data, and returns.
-     * @return Vector of (name, isAlive) pairs.
+     * Results are sorted according to the current SortMode (default: MEMORY descending).
+     * @return Vector of WatchableStatus structs.
      */
-    std::vector<std::pair<std::string, bool>> getStatusSnapshot() const;
+    std::vector<WatchableStatus> getStatusSnapshot() const;
+
+    /**
+     * @brief Sets the field used to sort the status snapshot.
+     * Thread-safe.
+     */
+    void setSortMode(SortMode mode);
+
+    /**
+     * @brief Send SIGTERM to a monitored process by its display name.
+     *
+     * Thread-safe. Returns false if no matching Manageable is found.
+     */
+    bool killByName(const std::string& name);
+
+    /**
+     * @brief Kill and relaunch a monitored process by its display name.
+     *
+     * Thread-safe. After a successful restart the tracked PID is updated.
+     * Returns false if no matching Manageable is found or restart fails.
+     */
+    bool restartByName(const std::string& name);
 
     /**
      * @brief Returns a detailed snapshot including granular state for ProcessMonitors.
@@ -118,6 +143,7 @@ private:
 
     Logger& m_logger;
     Config m_config;
+    SortMode m_sortMode{SortMode::MEMORY};
     std::vector<std::shared_ptr<Watchable>> m_watchables;
     std::unordered_map<std::string, std::string> m_lastStatus;
     std::chrono::steady_clock::time_point m_lastSummary;

@@ -2,6 +2,11 @@
 
 A robust and interactive watchdog system written in modern C++ that monitors processes and embedded threads, detects granular failures (crashes, freezes, I/O deadlocks), and provides a live CLI tracking interface with background logging.
 
+## Demo Videos
+
+- [Live Demo: Thread & Process Monitoring] https://youtu.be/Qjd-Qn36Msw
+- [Project Walkthrough: Architecture & Design] https://youtu.be/PeGOuqn_2x8
+
 ## Features
 - **Process Control Interface**: Direct process manipulation enabling you to kill or restart monitored processes directly from the dashboard.
 - **Resource Tracking & Sorting**: Real-time tracking of CPU and Memory utilization with the ability to sort the process list by resource consumption.

@@ -1,3 +1,17 @@
+## Credits
+
+This repository is a fork of [**Universal Watchdog**](https://github.com/studentprojectszuhlke/universal_watchdog), a C++17 Linux process and thread monitoring tool built by a team of four students in the **Zühlke C++ Mentorship Program** (April-May 2026), mentored by **Božica Kalinić**.
+
+**Original team:**
+- [David Ćuruvija](https://github.com/davidcuruvija)
+- [Danilo Nikolaš](https://github.com/ndanilo02)
+- [Lana Matić](https://github.com/lanamatic)
+- [Zagorka Pantović](https://github.com/zpantovic)
+
+The original project contains the monitoring engine, process and thread monitors, logger and the interactive terminal interface.
+
+**What's new in this fork:** a Qt6/QML dashboard, built by David Ćuruvija on top of the original `watchdog_core` library. The core monitoring code is unchanged.
+
 # C++ Universal Watchdog
 
 A robust and interactive watchdog system written in modern C++ that monitors processes and embedded threads, detects granular failures (crashes, freezes, I/O deadlocks), and provides a live CLI tracking interface with background logging.

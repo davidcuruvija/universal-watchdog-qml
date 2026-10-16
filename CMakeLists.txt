@@ -59,3 +59,12 @@ target_link_libraries(watchdog_app PRIVATE watchdog_core)
 # -----------------------------------------------------------------------------
 add_executable(watchdog_demo demo/demo.cpp)
 target_link_libraries(watchdog_demo PRIVATE watchdog_core)
+
+# -----------------------------------------------------------------------------
+# QML dashboard
+# -----------------------------------------------------------------------------
+option(WATCHDOG_BUILD_DASHBOARD "Build the QML dashboard application" ON)
+
+if(WATCHDOG_BUILD_DASHBOARD)
+    add_subdirectory(qml_dashboard)
+endif()

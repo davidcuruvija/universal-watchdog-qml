@@ -6,9 +6,24 @@ Window {
     visible: true
     title: "Watchdog Dashboard"
 
-    Text {
-        anchors.centerIn: parent
-        text: "Watchdog Dashboard - coming soon"
-        font.pixelSize: 20
+    ListView {
+        anchors.fill: parent
+        model: watchdogModel
+
+        delegate: Rectangle {
+            width: ListView.view.width
+            height: 48
+
+            Row {
+                anchors.fill: parent
+                anchors.margins: 8
+                spacing: 16
+
+                Text { text: model.name; font.bold: true }
+                Text { text: model.state }
+                Text { text: model.memory + " KB" }
+                Text { text: model.cpu.toFixed(1) + "%" }
+            }
+        }
     }
 }

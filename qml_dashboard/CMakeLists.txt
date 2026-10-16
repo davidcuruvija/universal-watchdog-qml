@@ -4,6 +4,7 @@ qt_standard_project_setup()
 
 qt_add_executable(watchdog_dashboard
     main.cpp
+    WatchdogModel.cpp
 )
 
 qt_add_qml_module(watchdog_dashboard

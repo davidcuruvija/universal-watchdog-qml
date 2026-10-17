@@ -59,7 +59,12 @@ public:
 
 public slots:
     /**
-     * @brief Re-pulls a fresh snapshot from the Watchdog and resets the model.
+     * @brief Re-pulls a fresh snapshot from the Watchdog and updates the model.
+     *
+     * Only emits dataChanged() for roles that actually changed, so an
+     * unchanged list doesn't flicker on every tick. Falls back to a full
+     * beginResetModel()/endResetModel() if a row was added, removed, or
+     * reordered.
      */
     void refresh();
 

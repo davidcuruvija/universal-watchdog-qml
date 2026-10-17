@@ -44,7 +44,36 @@ QHash<int, QByteArray> WatchdogModel::roleNames() const {
 }
 
 void WatchdogModel::refresh() {
-    beginResetModel();
-    m_snapshot = m_watchdog.getStatusSnapshot();
-    endResetModel();
+    std::vector<WatchableStatus> newSnapshot = m_watchdog.getStatusSnapshot();
+    
+    bool structureChanged = newSnapshot.size() != m_snapshot.size();
+    for (std::size_t i = 0; !structureChanged && i < newSnapshot.size(); ++i) {
+        if (newSnapshot[i].name != m_snapshot[i].name) {
+            structureChanged = true;
+        }
+    }
+
+    if (structureChanged) {
+        beginResetModel();
+        m_snapshot = std::move(newSnapshot);
+        endResetModel();
+        return;
+    }
+
+    for (int row = 0; row < static_cast<int>(newSnapshot.size()); ++row) {
+        const WatchableStatus& oldStatus = m_snapshot[static_cast<std::size_t>(row)];
+        const WatchableStatus& newStatus = newSnapshot[static_cast<std::size_t>(row)];
+
+        QList<int> changedRoles;
+        if (oldStatus.statusLabel != newStatus.statusLabel) changedRoles.append(StateRole);
+        if (oldStatus.memoryKB != newStatus.memoryKB) changedRoles.append(MemoryRole);
+        if (oldStatus.cpuPercent != newStatus.cpuPercent) changedRoles.append(CpuRole);
+
+        if (!changedRoles.isEmpty()) {
+            const QModelIndex changedIndex = index(row);
+            emit dataChanged(changedIndex, changedIndex, changedRoles);
+        }
+    }
+
+    m_snapshot = std::move(newSnapshot);
 }

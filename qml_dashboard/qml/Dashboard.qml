@@ -6,6 +6,17 @@ Window {
     visible: true
     title: "Watchdog Dashboard"
 
+    function stateColor(state) {
+        switch (state) {
+            case "ALIVE":   return "#c8e6c9";
+            case "STOPPED": return "#fff9c4";
+            case "STUCK":   return "#ffcc80";
+            case "ZOMBIE":  return "#d1c4e9";
+            case "DEAD":    return "#ef9a9a";
+            default:        return "#eeeeee";
+        }
+    }
+
     ListView {
         anchors.fill: parent
         model: watchdogModel
@@ -13,6 +24,7 @@ Window {
         delegate: Rectangle {
             width: ListView.view.width
             height: 48
+            color: stateColor(model.state)
 
             Row {
                 anchors.fill: parent

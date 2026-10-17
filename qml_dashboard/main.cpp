@@ -1,6 +1,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <QTimer>
 
 #include <iostream>
 #include <memory>
@@ -23,6 +24,11 @@ int main(int argc, char *argv[]) {
     watchdog.start();
 
     WatchdogModel watchdogModel(watchdog);
+
+    QTimer refreshTimer;
+    refreshTimer.setInterval(1000);
+    QObject::connect(&refreshTimer, &QTimer::timeout, &watchdogModel, &WatchdogModel::refresh);
+    refreshTimer.start();
 
     QQmlApplicationEngine engine;
     engine.rootContext()->setContextProperty("watchdogModel", &watchdogModel);

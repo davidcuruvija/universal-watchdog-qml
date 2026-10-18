@@ -1,8 +1,10 @@
 import QtQuick
+import QtQuick.Controls
 
 Window {
-    width: 480
+    width: 640
     height: 640
+    minimumWidth: 640
     visible: true
     title: "Watchdog Dashboard"
 
@@ -35,6 +37,16 @@ Window {
                 Text { text: model.state }
                 Text { text: model.memory + " KB" }
                 Text { text: model.cpu.toFixed(1) + "%" }
+
+                Button {
+                    text: "Kill"
+                    onClicked: watchdogModel.kill(model.name)
+                }
+
+                Button {
+                    text: "Restart"
+                    onClicked: watchdogModel.restart(model.name)
+                }
             }
         }
     }

@@ -1,4 +1,4 @@
-find_package(Qt6 REQUIRED COMPONENTS Quick)
+find_package(Qt6 REQUIRED COMPONENTS Quick QuickControls2)
 
 qt_standard_project_setup()
 
@@ -18,4 +18,5 @@ target_link_libraries(watchdog_dashboard
     PRIVATE
         watchdog_core
         Qt6::Quick
+        Qt6::QuickControls2
 )

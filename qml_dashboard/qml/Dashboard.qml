@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import WatchdogDashboard
 
 Window {
     width: 640
@@ -19,8 +20,21 @@ Window {
         }
     }
 
+    Button {
+        id: addButton
+        text: "Add Process"
+        anchors.top: parent.top
+        anchors.left: parent.left
+        anchors.margins: 8
+        onClicked: addDialog.open()
+    }
+
     ListView {
-        anchors.fill: parent
+        anchors.top: addButton.bottom
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.topMargin: 8
         model: watchdogModel
 
         delegate: Rectangle {
@@ -48,6 +62,58 @@ Window {
                     onClicked: watchdogModel.restart(model.name)
                 }
             }
+        }
+    }
+
+    Dialog {
+        id: addDialog
+        title: "Add Process"
+        anchors.centerIn: parent
+        modal: true
+        standardButtons: Dialog.Ok | Dialog.Cancel
+
+        TextField {
+            id: pidField
+            placeholderText: "PID"
+            validator: IntValidator { bottom: 1 }
+        }
+
+        onAccepted: {
+            if (pidField.text.length > 0) {
+                const result = watchdogModel.addProcess(parseInt(pidField.text));
+                if (result === WatchdogModel.NotFound) {
+                    notFoundDialog.open();
+                } else if (result === WatchdogModel.AlreadyMonitored) {
+                    alreadyMonitoredDialog.open();
+                }
+            }
+            pidField.text = "";
+        }
+
+        onRejected: pidField.text = ""
+    }
+
+    Dialog {
+        id: notFoundDialog
+        title: "Process Not Found"
+        anchors.centerIn: parent
+        modal: true
+        standardButtons: Dialog.Ok
+
+        Text {
+            text: "No process with that PID exists."
+        }
+    }
+
+    Dialog {
+        id: alreadyMonitoredDialog
+        title: "Already Monitored"
+        anchors.centerIn: parent
+        modal: true
+        standardButtons: Dialog.Ok
+
+        Text {
+            text: "That process is already being monitored."
         }
     }
 }

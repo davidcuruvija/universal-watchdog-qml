@@ -1,5 +1,9 @@
 #include "WatchdogModel.h"
 
+#include <memory>
+
+#include "ProcessMonitor.h"
+
 WatchdogModel::WatchdogModel(Watchdog& watchdog, QObject* parent)
     : QAbstractListModel(parent), m_watchdog(watchdog) {
     refresh();
@@ -55,6 +59,17 @@ bool WatchdogModel::restart(const QString& name) {
     return success;
 }
 
+WatchdogModel::AddResult WatchdogModel::addProcess(int pid) {
+    try {
+        auto pm = std::make_shared<ProcessMonitor>(static_cast<pid_t>(pid));
+        bool registered = m_watchdog.registerWatchable(pm);
+        refresh();
+        return registered ? AddResult::Added : AddResult::AlreadyMonitored;
+    } catch (const std::exception&) {
+        return AddResult::NotFound;
+    }
+}
+
 void WatchdogModel::refresh() {
     std::vector<WatchableStatus> newSnapshot = m_watchdog.getStatusSnapshot();
     
@@ -72,8 +87,11 @@ void WatchdogModel::refresh() {
         return;
     }
 
+    std::vector<WatchableStatus> oldSnapshot = std::move(m_snapshot);
+    m_snapshot = newSnapshot;
+
     for (int row = 0; row < static_cast<int>(newSnapshot.size()); ++row) {
-        const WatchableStatus& oldStatus = m_snapshot[static_cast<std::size_t>(row)];
+        const WatchableStatus& oldStatus = oldSnapshot[static_cast<std::size_t>(row)];
         const WatchableStatus& newStatus = newSnapshot[static_cast<std::size_t>(row)];
 
         QList<int> changedRoles;
@@ -86,6 +104,4 @@ void WatchdogModel::refresh() {
             emit dataChanged(changedIndex, changedIndex, changedRoles);
         }
     }
-
-    m_snapshot = std::move(newSnapshot);
 }

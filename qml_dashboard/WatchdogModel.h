@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QAbstractListModel>
+#include <QQmlEngine>
 #include <QString>
 #include <vector>
 
@@ -17,8 +18,20 @@
  */
 class WatchdogModel : public QAbstractListModel {
     Q_OBJECT
+    QML_ELEMENT
+    QML_UNCREATABLE("Created in C++ and exposed as the watchdogModel context property")
 
 public:
+    /**
+     * @brief Outcome of addProcess(), so QML can show a specific message
+     *        instead of a single generic failure.
+     */
+    enum AddResult {
+        Added,             ///< Registered successfully.
+        AlreadyMonitored,  ///< A watchable with that name is already registered.
+        NotFound           ///< No process with that PID exists.
+    };
+    Q_ENUM(AddResult)
     /**
      * @brief Role IDs exposed to QML, mapped to role names by roleNames().
      */
@@ -71,6 +84,13 @@ public:
      * @return true if a matching entity was found and restarted.
      */
     Q_INVOKABLE bool restart(const QString& name);
+
+    /**
+     * @brief Registers a new process to monitor by PID.
+     * @param pid Process ID to monitor.
+     * @return Added on success, or the specific reason it failed.
+     */
+    Q_INVOKABLE AddResult addProcess(int pid);
 
 public slots:
     /**

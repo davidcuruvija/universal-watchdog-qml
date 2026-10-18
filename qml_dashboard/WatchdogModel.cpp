@@ -43,6 +43,18 @@ QHash<int, QByteArray> WatchdogModel::roleNames() const {
     };
 }
 
+bool WatchdogModel::kill(const QString& name) {
+    bool success = m_watchdog.killByName(name.toStdString());
+    refresh();
+    return success;
+}
+
+bool WatchdogModel::restart(const QString& name) {
+    bool success = m_watchdog.restartByName(name.toStdString());
+    refresh();
+    return success;
+}
+
 void WatchdogModel::refresh() {
     std::vector<WatchableStatus> newSnapshot = m_watchdog.getStatusSnapshot();
     

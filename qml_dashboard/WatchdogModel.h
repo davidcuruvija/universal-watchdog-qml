@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QAbstractListModel>
+#include <QString>
 #include <vector>
 
 #include "watchdog.h"
@@ -56,6 +57,20 @@ public:
      * @return Role ID to name mapping (e.g. NameRole -> "name").
      */
     QHash<int, QByteArray> roleNames() const override;
+
+    /**
+     * @brief Sends SIGTERM to the monitored entity with the given name.
+     * @param name Display name as shown by the name role.
+     * @return true if a matching entity was found and killed.
+     */
+    Q_INVOKABLE bool kill(const QString& name);
+
+    /**
+     * @brief Kills and relaunches the monitored entity with the given name.
+     * @param name Display name as shown by the name role.
+     * @return true if a matching entity was found and restarted.
+     */
+    Q_INVOKABLE bool restart(const QString& name);
 
 public slots:
     /**

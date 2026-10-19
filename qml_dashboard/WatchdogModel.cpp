@@ -59,6 +59,12 @@ bool WatchdogModel::restart(const QString& name) {
     return success;
 }
 
+bool WatchdogModel::removeWatchable(const QString& name) {
+    bool success = m_watchdog.unregisterByName(name.toStdString());
+    refresh();
+    return success;
+}
+
 WatchdogModel::AddResult WatchdogModel::addProcess(int pid) {
     try {
         auto pm = std::make_shared<ProcessMonitor>(static_cast<pid_t>(pid));

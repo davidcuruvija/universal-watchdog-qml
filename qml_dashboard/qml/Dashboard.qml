@@ -3,9 +3,9 @@ import QtQuick.Controls
 import WatchdogDashboard
 
 Window {
-    width: 740
+    width: 840
     height: 640
-    minimumWidth: 740
+    minimumWidth: 840
     visible: true
     title: "Watchdog Dashboard"
 
@@ -117,6 +117,12 @@ Window {
                     text: "Restart"
                     anchors.verticalCenter: parent.verticalCenter
                     onClicked: watchdogModel.restart(model.name)
+                }
+
+                Button {
+                    text: "Remove"
+                    anchors.verticalCenter: parent.verticalCenter
+                    onClicked: watchdogModel.removeWatchable(model.name)
                 }
             }
         }

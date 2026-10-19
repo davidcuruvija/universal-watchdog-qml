@@ -86,6 +86,14 @@ public:
     Q_INVOKABLE bool restart(const QString& name);
 
     /**
+     * @brief Stops monitoring the entity with the given name, without
+     *        killing the underlying process.
+     * @param name Display name as shown by the name role.
+     * @return true if a matching entity was found and removed.
+     */
+    Q_INVOKABLE bool removeWatchable(const QString& name);
+
+    /**
      * @brief Registers a new process to monitor by PID.
      * @param pid Process ID to monitor.
      * @return Added on success, or the specific reason it failed.

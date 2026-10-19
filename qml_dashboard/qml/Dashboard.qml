@@ -3,9 +3,9 @@ import QtQuick.Controls
 import WatchdogDashboard
 
 Window {
-    width: 640
+    width: 740
     height: 640
-    minimumWidth: 640
+    minimumWidth: 740
     visible: true
     title: "Watchdog Dashboard"
 
@@ -33,6 +33,11 @@ Window {
             onClicked: addDialog.open()
         }
 
+        Label {
+            text: "Sort by:"
+            anchors.verticalCenter: parent.verticalCenter
+        }
+
         ComboBox {
             id: sortCombo
             model: ["Memory", "CPU", "Name"]
@@ -40,8 +45,22 @@ Window {
         }
     }
 
-    ListView {
+    Row {
+        id: headerRow
         anchors.top: topBar.bottom
+        anchors.left: parent.left
+        anchors.topMargin: 12
+        anchors.leftMargin: 16
+        spacing: 16
+
+        Text { text: "Name";   font.bold: true; width: 200 }
+        Text { text: "State";  font.bold: true; width: 70 }
+        Text { text: "Memory"; font.bold: true; width: 90 }
+        Text { text: "CPU";    font.bold: true; width: 60 }
+    }
+
+    ListView {
+        anchors.top: headerRow.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom
@@ -50,26 +69,53 @@ Window {
 
         delegate: Rectangle {
             width: ListView.view.width
-            height: 48
+            height: 56
             color: stateColor(model.state)
+
+            Rectangle {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.bottom: parent.bottom
+                height: 1
+                color: "#bdbdbd"
+            }
 
             Row {
                 anchors.fill: parent
                 anchors.margins: 8
                 spacing: 16
 
-                Text { text: model.name; font.bold: true }
-                Text { text: model.state }
-                Text { text: model.memory + " KB" }
-                Text { text: model.cpu.toFixed(1) + "%" }
+                Text {
+                    text: model.name
+                    font.bold: true
+                    width: 200
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                Text {
+                    text: model.state
+                    width: 70
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                Text {
+                    text: model.memory + " KB"
+                    width: 90
+                    anchors.verticalCenter: parent.verticalCenter
+                }
+                Text {
+                    text: model.cpu.toFixed(1) + "%"
+                    width: 60
+                    anchors.verticalCenter: parent.verticalCenter
+                }
 
                 Button {
                     text: "Kill"
+                    anchors.verticalCenter: parent.verticalCenter
                     onClicked: watchdogModel.kill(model.name)
                 }
 
                 Button {
                     text: "Restart"
+                    anchors.verticalCenter: parent.verticalCenter
                     onClicked: watchdogModel.restart(model.name)
                 }
             }

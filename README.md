@@ -34,11 +34,10 @@ app above - live process list, color-coded by state, refreshing every second.
 - **Color-coded states**: `ALIVE` (green), `STOPPED` (yellow), `STUCK` (orange), `ZOMBIE` (purple), `DEAD` (red)
 
 ### Build & Run
-
-\`\`\`bash
+```bash
 cmake --build build --target watchdog_dashboard
 ./build/qml_dashboard/watchdog_dashboard
-\`\`\`
+```
 
 ## Features
 - **Process Control Interface**: Direct process manipulation enabling you to kill or restart monitored processes directly from the dashboard.

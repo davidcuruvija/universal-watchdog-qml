@@ -21,6 +21,25 @@ A robust and interactive watchdog system written in modern C++ that monitors pro
 - [Live Demo: Thread & Process Monitoring] https://youtu.be/Qjd-Qn36Msw
 - [Project Walkthrough: Architecture & Design] https://youtu.be/PeGOuqn_2x8
 
+## QML Dashboard
+
+![QML Dashboard](documentation/dashboard_screenshot.png)
+
+A Qt6/QML GUI built on top of the same `watchdog_core` library as the terminal
+app above - live process list, color-coded by state, refreshing every second.
+
+- **Live view**: auto-refreshing list with per-process name, state, memory, and CPU
+- **Process control**: kill, restart, remove, or add a process by PID, all from the UI
+- **Sortable**: sort by name, memory, or CPU usage
+- **Color-coded states**: `ALIVE` (green), `STOPPED` (yellow), `STUCK` (orange), `ZOMBIE` (purple), `DEAD` (red)
+
+### Build & Run
+
+\`\`\`bash
+cmake --build build --target watchdog_dashboard
+./build/qml_dashboard/watchdog_dashboard
+\`\`\`
+
 ## Features
 - **Process Control Interface**: Direct process manipulation enabling you to kill or restart monitored processes directly from the dashboard.
 - **Resource Tracking & Sorting**: Real-time tracking of CPU and Memory utilization with the ability to sort the process list by resource consumption.

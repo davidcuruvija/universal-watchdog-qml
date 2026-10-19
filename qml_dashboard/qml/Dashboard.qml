@@ -20,17 +20,28 @@ Window {
         }
     }
 
-    Button {
-        id: addButton
-        text: "Add Process"
+    Row {
+        id: topBar
         anchors.top: parent.top
         anchors.left: parent.left
         anchors.margins: 8
-        onClicked: addDialog.open()
+        spacing: 8
+
+        Button {
+            id: addButton
+            text: "Add Process"
+            onClicked: addDialog.open()
+        }
+
+        ComboBox {
+            id: sortCombo
+            model: ["Memory", "CPU", "Name"]
+            onActivated: watchdogModel.setSortMode(currentText)
+        }
     }
 
     ListView {
-        anchors.top: addButton.bottom
+        anchors.top: topBar.bottom
         anchors.left: parent.left
         anchors.right: parent.right
         anchors.bottom: parent.bottom

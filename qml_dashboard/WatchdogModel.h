@@ -92,6 +92,14 @@ public:
      */
     Q_INVOKABLE AddResult addProcess(int pid);
 
+    /**
+     * @brief Sets the field the dashboard list is sorted by.
+     * @param mode One of "name", "memory", "cpu" (case-insensitive);
+     *             anything else falls back to the Watchdog's default
+     *             (memory).
+     */
+    Q_INVOKABLE void setSortMode(const QString& mode);
+
 public slots:
     /**
      * @brief Re-pulls a fresh snapshot from the Watchdog and updates the model.

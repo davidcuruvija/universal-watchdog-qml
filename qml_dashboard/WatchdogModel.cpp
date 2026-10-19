@@ -70,6 +70,18 @@ WatchdogModel::AddResult WatchdogModel::addProcess(int pid) {
     }
 }
 
+void WatchdogModel::setSortMode(const QString& mode) {
+    const QString normalized = mode.toLower();
+    if (normalized == "name") {
+        m_watchdog.setSortMode(SortMode::NAME);
+    } else if (normalized == "cpu") {
+        m_watchdog.setSortMode(SortMode::CPU);
+    } else {
+        m_watchdog.setSortMode(SortMode::MEMORY);
+    }
+    refresh();
+}
+
 void WatchdogModel::refresh() {
     std::vector<WatchableStatus> newSnapshot = m_watchdog.getStatusSnapshot();
     
